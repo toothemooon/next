@@ -453,7 +453,7 @@ class _PixelRingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final cx = size.width / 2;
     final cy = size.height / 2;
-    final r  = size.width * 0.44;
+    final r  = size.width * 0.55;
 
     const dotSize = 5.0;
     const steps   = 80;
@@ -670,8 +670,8 @@ class HomeScreen extends StatelessWidget {
           builder: (context, state, _) {
             return Column(
               children: [
-                _buildStatusBar(),
-                _buildAppBadge(),
+                // _buildStatusBar(),
+                // _buildAppBadge(),
                 const SizedBox(height: 6),
                 PhaseTabBar(
                   current: state.phase,
@@ -703,48 +703,48 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBar() {
-    return Container(
-      color: AppColors.bg2,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('9:41', style: AppTextStyles.label),
-          Row(
-            children: List.generate(
-              3,
-              (i) => Container(
-                width: 8, height: 8,
-                margin: const EdgeInsets.only(left: 3),
-                color: i < 3 ? AppColors.accent : AppColors.track,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildStatusBar() {
+  //   return Container(
+  //     color: AppColors.bg2,
+  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //       children: [
+  //         Text('9:41', style: AppTextStyles.label),
+  //         Row(
+  //           children: List.generate(
+  //             3,
+  //             (i) => Container(
+  //               width: 8, height: 8,
+  //               margin: const EdgeInsets.only(left: 3),
+  //               color: i < 3 ? AppColors.accent : AppColors.track,
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  Widget _buildAppBadge() {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.accentD,
-        border: Border.all(color: AppColors.accent, width: 1),
-      ),
-      child: const Text(
-        'TOMATO',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 11,
-          fontFamily: 'Courier',
-          letterSpacing: 2,
-        ),
-      ),
-    );
-  }
+  // Widget _buildAppBadge() {
+  //   return Container(
+  //     margin: const EdgeInsets.only(top: 8),
+  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+  //     decoration: BoxDecoration(
+  //       color: AppColors.accentD,
+  //       border: Border.all(color: AppColors.accent, width: 1),
+  //     ),
+  //     child: const Text(
+  //       'TOMATO',
+  //       style: TextStyle(
+  //         color: Colors.white,
+  //         fontSize: 11,
+  //         fontFamily: 'Courier',
+  //         letterSpacing: 2,
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildPixelDivider() {
     return Padding(
