@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'widgets/settings_page.dart';
+import 'widgets/statistics_page.dart';
 
 // ════════════════════════════════════════
 // 🎨 主题颜色
@@ -249,11 +251,26 @@ class PomodoroState extends ChangeNotifier {
       if (t.id == id) return t.copyWith(isDone: !t.isDone);
       return t;
     }).toList();
+    _sortTasks();
     notifyListeners();
   }
 
   void addTask(String text) {
-    _tasks = [..._tasks, Task(id: DateTime.now().toString(), text: text)];
+    if (text.trim().isEmpty) return;
+    _tasks = [Task(id: DateTime.now().toString(), text: text), ..._tasks];
+    _sortTasks();
+    notifyListeners();
+  }
+
+  void _sortTasks() {
+    _tasks.sort((a, b) {
+      if (a.isDone == b.isDone) return 0;
+      return a.isDone ? 1 : -1;
+    });
+  }
+
+  void deleteTask(String id) {
+    _tasks = _tasks.where((t) => t.id != id).toList();
     notifyListeners();
   }
 
@@ -584,11 +601,36 @@ class _PixelButtonState extends State<PixelButton> {
 // ════════════════════════════════════════
 // 📝 任务列表
 // ════════════════════════════════════════
-class TaskList extends StatelessWidget {
+class TaskList extends StatefulWidget {
   final List<Task> tasks;
   final ValueChanged<String> onToggle;
+  final ValueChanged<String> onDelete;
+  final ValueChanged<String> onAdd;
 
-  const TaskList({super.key, required this.tasks, required this.onToggle});
+  const TaskList({
+    super.key,
+    required this.tasks,
+    required this.onToggle,
+    required this.onDelete,
+    required this.onAdd,
+  });
+
+  @override
+  State<TaskList> createState() => _TaskListState();
+}
+
+class _TaskListState extends State<TaskList> {
+  bool _isAdding = false;
+  final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  void _submit() {
+    if (_controller.text.isNotEmpty) {
+      widget.onAdd(_controller.text);
+      _controller.clear();
+    }
+    setState(() => _isAdding = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -604,51 +646,130 @@ class TaskList extends StatelessWidget {
         children: [
           Text('// 今日任务', style: AppTextStyles.sectionLabel),
           const SizedBox(height: 8),
-          ...tasks.map((t) => _TaskRow(task: t, onToggle: () => onToggle(t.id))),
+          ...widget.tasks.map((t) => _TaskRow(
+                task: t,
+                onToggle: () => widget.onToggle(t.id),
+                onDelete: () => widget.onDelete(t.id),
+              )),
+          const SizedBox(height: 8),
+          _buildAddRow(),
         ],
       ),
     );
+  }
+
+  Widget _buildAddRow() {
+    if (_isAdding) {
+      return Row(
+        children: [
+          const SizedBox(width: 24),
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              autofocus: true,
+              style: AppTextStyles.taskItem,
+              textInputAction: TextInputAction.done,
+              decoration: const InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                hintText: '输入任务...',
+                hintStyle: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.check, size: 18, color: AppColors.accentD),
+            onPressed: _submit,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      );
+    }
+
+    return GestureDetector(
+      onTap: () {
+        setState(() => _isAdding = true);
+        _focusNode.requestFocus();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          '＋ 添加任务...',
+          style: AppTextStyles.taskItem.copyWith(color: AppColors.textSecondary),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
   }
 }
 
 class _TaskRow extends StatelessWidget {
   final Task task;
   final VoidCallback onToggle;
+  final VoidCallback onDelete;
 
-  const _TaskRow({required this.task, required this.onToggle});
+  const _TaskRow({
+    required this.task,
+    required this.onToggle,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onToggle,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Row(
-          children: [
-            Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(
-                color: task.isDone ? AppColors.accent : Colors.transparent,
-                border: Border.all(
-                  color: task.isDone ? AppColors.accentD : AppColors.textSecondary,
-                  width: 2,
+    // 隐藏 Dismissible 背景（极简风格），或者显示红色背景
+    // 这里采用极简风格：左滑直接删除，背景显示红色提示
+    return Dismissible(
+      key: Key(task.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => onDelete(),
+      background: Container(
+        color: AppColors.tomRed,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        child: const Icon(Icons.delete, color: Colors.white, size: 20),
+      ),
+      child: GestureDetector(
+        onTap: onToggle,
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8), // 增加一点点击区域
+          child: Row(
+            children: [
+              Container(
+                width: 18, // 稍微加大
+                height: 18,
+                decoration: BoxDecoration(
+                  color: task.isDone ? AppColors.accent.withOpacity(0.2) : Colors.transparent,
+                  border: Border.all(
+                    color: task.isDone ? AppColors.accent : AppColors.textSecondary.withOpacity(0.5),
+                    width: 1.5,
+                  ),
+                  borderRadius: BorderRadius.circular(4), //稍微圆角一点点
+                ),
+                child: task.isDone
+                    ? const Icon(Icons.check, size: 12, color: AppColors.accentD)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  task.text,
+                  style: task.isDone
+                      ? AppTextStyles.taskDone.copyWith(color: AppColors.textSecondary.withOpacity(0.5))
+                      : AppTextStyles.taskItem,
                 ),
               ),
-              child: task.isDone
-                  ? const Icon(Icons.check, size: 10, color: Colors.white)
-                  : null,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                task.text,
-                style: task.isDone
-                    ? AppTextStyles.taskDone
-                    : AppTextStyles.taskItem,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -658,93 +779,128 @@ class _TaskRow extends StatelessWidget {
 // ════════════════════════════════════════
 // 🏠 主屏幕
 // ════════════════════════════════════════
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _pages = [
+    const TimerView(),
+    const StatisticsPage(),
+    const SettingsPage(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
-        child: Consumer<PomodoroState>(
-          builder: (context, state, _) {
-            return Column(
-              children: [
-                // _buildStatusBar(),
-                // _buildAppBadge(),
-                const SizedBox(height: 6),
-                PhaseTabBar(
-                  current: state.phase,
-                  onChanged: (p) => state.switchPhase(p),
-                ),
-                const SizedBox(height: 12),
-                TomatoRow(completed: state.completed),
-                const SizedBox(height: 4),
-                Text('${state.completed} / 4', style: AppTextStyles.count),
-                _buildPixelDivider(),
-                const SizedBox(height: 8),
-                _buildRingWithTime(state),
-                _buildPixelDivider(),
-                const SizedBox(height: 12),
-                _buildControls(context, state),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: TaskList(
-                    tasks: state.tasks,
-                    onToggle: state.toggleTask,
-                  ),
-                ),
-                _buildNavBar(),
-              ],
-            );
-          },
+        child: Column(
+          children: [
+            Expanded(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: _pages,
+              ),
+            ),
+            _buildNavBar(),
+          ],
         ),
       ),
     );
   }
 
-  // Widget _buildStatusBar() {
-  //   return Container(
-  //     color: AppColors.bg2,
-  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-  //     child: Row(
-  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //       children: [
-  //         Text('9:41', style: AppTextStyles.label),
-  //         Row(
-  //           children: List.generate(
-  //             3,
-  //             (i) => Container(
-  //               width: 8, height: 8,
-  //               margin: const EdgeInsets.only(left: 3),
-  //               color: i < 3 ? AppColors.accent : AppColors.track,
-  //             ),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+  Widget _buildNavBar() {
+    final items = [
+      (Icons.timer_outlined, '计时'),
+      (Icons.bar_chart, '统计'),
+      (Icons.settings_outlined, '设置'),
+    ];
+    return Container(
+      height: 64,
+      decoration: const BoxDecoration(
+        color: AppColors.navBg,
+        border: Border(top: BorderSide(color: AppColors.track, width: 2)),
+      ),
+      child: Row(
+        children: List.generate(items.length, (index) {
+          final (icon, label) = items[index];
+          final active = _selectedIndex == index;
+          return Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => _selectedIndex = index),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (active)
+                    Container(height: 3, width: 32, color: AppColors.accent),
+                  const SizedBox(height: 4),
+                  Icon(
+                    icon,
+                    size: 20,
+                    color: active ? AppColors.accentD : AppColors.textSecondary,
+                  ),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: active ? AppColors.accentD : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
 
-  // Widget _buildAppBadge() {
-  //   return Container(
-  //     margin: const EdgeInsets.only(top: 8),
-  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-  //     decoration: BoxDecoration(
-  //       color: AppColors.accentD,
-  //       border: Border.all(color: AppColors.accent, width: 1),
-  //     ),
-  //     child: const Text(
-  //       'TOMATO',
-  //       style: TextStyle(
-  //         color: Colors.white,
-  //         fontSize: 11,
-  //         fontFamily: 'Courier',
-  //         letterSpacing: 2,
-  //       ),
-  //     ),
-  //   );
-  // }
+class TimerView extends StatelessWidget {
+  const TimerView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<PomodoroState>(
+      builder: (context, state, _) {
+        return Column(
+          children: [
+            const SizedBox(height: 6),
+            PhaseTabBar(
+              current: state.phase,
+              onChanged: (p) => state.switchPhase(p),
+            ),
+            const SizedBox(height: 12),
+            TomatoRow(completed: state.completed),
+            const SizedBox(height: 4),
+            Text('${state.completed} / 4', style: AppTextStyles.count),
+            _buildPixelDivider(),
+            const SizedBox(height: 8),
+            _buildRingWithTime(state),
+            _buildPixelDivider(),
+            const SizedBox(height: 12),
+            _buildControls(context, state),
+            const SizedBox(height: 12),
+            Expanded(
+              child: TaskList(
+                tasks: state.tasks,
+                onToggle: state.toggleTask,
+                onDelete: state.deleteTask,
+                onAdd: state.addTask,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildPixelDivider() {
     return Padding(
@@ -846,44 +1002,49 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNavBar() {
-    final items = [
-      (Icons.timer_outlined, '计时', true),
-      (Icons.bar_chart,       '统计', false),
-      (Icons.settings_outlined,'设置', false),
-    ];
-    return Container(
-      height: 64,
-      decoration: BoxDecoration(
-        color: AppColors.navBg,
-        border: Border(top: BorderSide(color: AppColors.track, width: 2)),
-      ),
-      child: Row(
-        children: items.map((item) {
-          final (icon, label, active) = item;
-          return Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (active)
-                  Container(height: 3, width: 32, color: AppColors.accent),
-                const SizedBox(height: 4),
-                Icon(icon, size: 20,
-                    color: active ? AppColors.accentD : AppColors.textSecondary),
-                Text(label,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: active ? AppColors.accentD : AppColors.textSecondary,
-                    )),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
+  // Widget _buildStatusBar() {
+  //   return Container(
+  //     color: AppColors.bg2,
+  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //       children: [
+  //         Text('9:41', style: AppTextStyles.label),
+  //         Row(
+  //           children: List.generate(
+  //             3,
+  //             (i) => Container(
+  //               width: 8, height: 8,
+  //               margin: const EdgeInsets.only(left: 3),
+  //               color: i < 3 ? AppColors.accent : AppColors.track,
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
+  // Widget _buildAppBadge() {
+  //   return Container(
+  //     margin: const EdgeInsets.only(top: 8),
+  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+  //     decoration: BoxDecoration(
+  //       color: AppColors.accentD,
+  //       border: Border.all(color: AppColors.accent, width: 1),
+  //     ),
+  //     child: const Text(
+  //       'TOMATO',
+  //       style: TextStyle(
+  //         color: Colors.white,
+  //         fontSize: 11,
+  //         fontFamily: 'Courier',
+  //         letterSpacing: 2,
+  //       ),
+  //     ),
+  //   );
+  // }
+}
 // ════════════════════════════════════════
 // 🚀 入口函数
 // ════════════════════════════════════════
