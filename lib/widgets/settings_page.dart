@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'pixel_tomato.dart';
 
+// 设置页面 Widget
+// 说明：该文件把设置页拆成多个私有构建方法（_build...），每个方法负责界面中一小块。
+// 交互点（按钮、开关）的回调目前为占位（空函数），实际逻辑应由上层状态或 Provider/Bloc 注入。
+// 注：仅添加注释以帮助理解，未修改控件树或任何回调实现。
+
 // ========== 设置页 Widget ==========
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -44,6 +49,7 @@ class SettingsPage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 44, 16, 16),
       child: const Row(
         children: [
+          // 顶部代码风格标题（视觉提示，非功能注释）
           Text('// 设置', style: TextStyle(fontSize: 14, color: Color(0xFF718096), fontFamily: 'monospace')),
         ],
       ),
@@ -55,6 +61,7 @@ class SettingsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 计时器设置区块标题（使用等宽字体样式以保持视觉风格一致）
         Text('// 计时器', style: _getCodeStyle()),
         const SizedBox(height: 12),
         Container(
@@ -82,6 +89,7 @@ class SettingsPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
+          // 左侧标签（例如“专注时长”）
           Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF2D3748)))),
           Row(
             children: [
@@ -115,6 +123,7 @@ class SettingsPage extends StatelessWidget {
           border: Border.all(color: const Color(0xFF9FB8A4)),
         ),
         child: Center(
+          // 减/加 按钮（现在为无状态占位），样式为小方块
           child: Text(text, style: const TextStyle(fontSize: 18, color: Color(0xFF2D3748))),
         ),
       ),
@@ -126,6 +135,7 @@ class SettingsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 休息提醒区：显示通知图标和规则（例如每完成 4 个番茄钟后长休息）
         Text('// 休息提醒', style: _getCodeStyle()),
         const SizedBox(height: 12),
         Container(
@@ -160,6 +170,7 @@ class SettingsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 通知设置：开关声音/震动等
         Text('// 通知', style: _getCodeStyle()),
         const SizedBox(height: 12),
         Container(
@@ -185,6 +196,7 @@ class SettingsPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
+          // 开关行左侧标签
           Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF2D3748)))),
           Transform.scale(
             scale: 0.8,
@@ -205,6 +217,7 @@ class SettingsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 其他开关设置（示例项），每一行使用同样的 _buildSwitchRow 结构
         Text('// 其他设置', style: _getCodeStyle()),
         const SizedBox(height: 12),
         Container(
@@ -234,6 +247,7 @@ class SettingsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 主题选择区：展示多个色块，选中项显示勾
         Text('// 主题', style: _getCodeStyle()),
         const SizedBox(height: 12),
         Container(
@@ -265,6 +279,7 @@ class SettingsPage extends StatelessWidget {
             width: 2,
           ),
         ),
+        // 选中样式：显示白色对勾图标
         child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
       ),
     );
@@ -277,6 +292,7 @@ class SettingsPage extends StatelessWidget {
       decoration: _buildDashedBorder(),
       child: Row(
         children: [
+          // 小番茄图标作为品牌/标识
           const PixelTomato(filled: true, size: 24),
           const SizedBox(width: 12),
           const Column(
@@ -288,6 +304,7 @@ class SettingsPage extends StatelessWidget {
             ],
           ),
           const Spacer(),
+          // 右侧开关（示例），目前为占位
           Transform.scale(
             scale: 0.8,
             child: Switch(

@@ -2,6 +2,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'pixel_tomato.dart';
 
+// 统计页面：展示番茄钟的关键统计信息与可视化（卡片、柱状图、今日番茄、时间段分布、明细）
+// 结构说明：页面被拆分为若干私有构建方法 (`_build...`)：每个方法负责一块 UI，便于阅读和维护。
+// 注：图表使用 `fl_chart` 渲染，数据当前为示例静态值；把注释分散在相关方法附近以便快速理解。
 // ========== 统计页 Widget ==========
 class StatisticsPage extends StatelessWidget {
   const StatisticsPage({super.key});
@@ -44,6 +47,7 @@ class StatisticsPage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 44, 16, 16),
       child: Row(
         children: [
+          // 标题显示为“// 统计”，使用等宽字体样式与设置页保持统一视觉风格
           Text('// 统计', style: _getCodeStyle()),
           const Spacer(),
           _buildPeriodSelector(),
@@ -60,6 +64,7 @@ class StatisticsPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
+          // 左中右三列分别展示不同的关键指标（数值、单位、变动标识）
           _buildStatItem('6', '完成', '+2', true),
           _buildVerticalDivider(),
           _buildStatItem('150', '分钟', '+12%', true),
@@ -83,6 +88,7 @@ class StatisticsPage extends StatelessWidget {
             color: isPositive ? const Color(0xC8D4B2).withOpacity(0.5) : const Color(0xFFE53E3E).withOpacity(0.2),
             borderRadius: BorderRadius.circular(4),
           ),
+          // 变动标签：根据是否为正向增长选择不同背景与文字颜色
           child: Text(
             change,
             style: TextStyle(
@@ -104,6 +110,7 @@ class StatisticsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 本周趋势：柱状图展示一周每天的番茄计数（示例数据）
         Text('// 本周趋势', style: _getCodeStyle()),
         const SizedBox(height: 12),
         Container(
@@ -132,6 +139,7 @@ class StatisticsPage extends StatelessWidget {
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
+                    // 底部横轴标签：把索引映射为中文星期（示例）
                     getTitlesWidget: (value, meta) {
                       String text;
                       switch (value.toInt()) {
@@ -185,6 +193,7 @@ class StatisticsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 今日番茄：用多个 `PixelTomato` 表示今日已完成/目标状态
                 Text('// 今日番茄', style: _getCodeStyle()),
                 const SizedBox(height: 12),
                 Row(
@@ -223,6 +232,7 @@ class StatisticsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 时间段分布：展示一天内按时段的专注次数，颜色表示是否为活跃时段
         Text('// 时间段', style: _getCodeStyle()),
         const SizedBox(height: 12),
         Row(
@@ -250,8 +260,10 @@ class StatisticsPage extends StatelessWidget {
         ),
         child: Column(
           children: [
+            // 时间段数量（大号字体）
             Text(count, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(height: 4),
+            // 时间范围（小字体）
             Text(time, style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.9))),
           ],
         ),
@@ -267,6 +279,7 @@ class StatisticsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 详情区：列出若干关键统计项的标签与数值
           Text('// 详情', style: _getCodeStyle()),
           const SizedBox(height: 12),
           _buildStatRow('专注次数', '5 次'),
@@ -283,6 +296,7 @@ class StatisticsPage extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
+        // 左侧为统计项标签，右侧为对应的值
         Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF718096))),
         Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2D3748))),
       ],
