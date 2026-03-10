@@ -13,7 +13,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF5F1E8),
+      color: const Color(0xFFF5F1E8), // 背景颜色
       child: Column(
         children: [
           _buildHeader(),
@@ -38,12 +38,12 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
           ),
-          // _buildBottomNav removed to be handled by parent
         ],
       ),
     );
   }
 
+  // 构建顶部标题
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 44, 16, 16),
@@ -56,12 +56,11 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // 计时器设置
+  // 构建计时器设置
   Widget _buildTimerSettings() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 计时器设置区块标题（使用等宽字体样式以保持视觉风格一致）
         Text('// 计时器', style: _getCodeStyle()),
         const SizedBox(height: 12),
         Container(
@@ -84,12 +83,12 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  // 构建计数器行（如专注时长）
   Widget _buildCounterRow(String label, int value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          // 左侧标签（例如“专注时长”）
           Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF2D3748)))),
           Row(
             children: [
@@ -111,6 +110,7 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  // 构建计数器按钮
   Widget _buildCounterButton(String text, VoidCallback onPressed) {
     return GestureDetector(
       onTap: onPressed,
@@ -123,19 +123,17 @@ class SettingsPage extends StatelessWidget {
           border: Border.all(color: const Color(0xFF9FB8A4)),
         ),
         child: Center(
-          // 减/加 按钮（现在为无状态占位），样式为小方块
           child: Text(text, style: const TextStyle(fontSize: 18, color: Color(0xFF2D3748))),
         ),
       ),
     );
   }
 
-  // 休息设置
+  // 构建休息设置
   Widget _buildBreakSettings() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 休息提醒区：显示通知图标和规则（例如每完成 4 个番茄钟后长休息）
         Text('// 休息提醒', style: _getCodeStyle()),
         const SizedBox(height: 12),
         Container(
@@ -165,12 +163,11 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // 通知设置
+  // 构建通知设置
   Widget _buildNotificationSettings() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 通知设置：开关声音/震动等
         Text('// 通知', style: _getCodeStyle()),
         const SizedBox(height: 12),
         Container(
@@ -191,12 +188,12 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  // 构建开关行
   Widget _buildSwitchRow(String label, bool value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          // 开关行左侧标签
           Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF2D3748)))),
           Transform.scale(
             scale: 0.8,
@@ -212,12 +209,11 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // 开关设置
+  // 构建其他设置
   Widget _buildToggleSettings() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 其他开关设置（示例项），每一行使用同样的 _buildSwitchRow 结构
         Text('// 其他设置', style: _getCodeStyle()),
         const SizedBox(height: 12),
         Container(
@@ -242,7 +238,7 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // 主题选择
+  // 构建主题选择
   Widget _buildThemeSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,6 +263,7 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  // 构建单个主题选项
   Widget _buildThemeOption(Color color, bool isSelected) {
     return Expanded(
       child: Container(
@@ -285,7 +282,7 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // 版本信息
+  // 构建版本信息
   Widget _buildVersionInfo() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -318,6 +315,7 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  // 辅助方法：构建虚线边框
   BoxDecoration _buildDashedBorder() {
     return BoxDecoration(
       border: Border.all(color: const Color(0xFF9FB8A4).withOpacity(0.3), width: 1),
@@ -325,6 +323,7 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  // 辅助方法：获取代码风格文本样式
   TextStyle _getCodeStyle() {
     return const TextStyle(fontSize: 14, color: Color(0xFF718096), fontFamily: 'monospace');
   }

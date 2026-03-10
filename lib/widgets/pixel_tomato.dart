@@ -52,7 +52,7 @@ class _TomatoPainter extends CustomPainter {
     dot(6,2,leafColor); dot(7,2,leafColor);
     dot(3,2,leafColor); dot(4,2,leafColor); dot(5,2,leafColor);
 
-    // Body：按行绘制番茄主体及其阴影，保留像素化风格的明确行列。
+    // Body
     for (final gx in [2,3,4,5,6]) dot(gx,3,bodyColor);
     dot(1,3,shadowColor); dot(7,3,shadowColor);
     for (int gx=1; gx<=7; gx++) dot(gx,4,bodyColor);
@@ -72,7 +72,7 @@ class _TomatoPainter extends CustomPainter {
       dot(1,5,hiColor);
     }
 
-    // Outline for empty：如果是空心状态，额外绘制外轮廓像素以表现边框。
+    // Outline for empty
     if (outlineColor != null) {
       dot(1,3,outlineColor); dot(7,3,outlineColor);
       dot(0,4,outlineColor); dot(8,4,outlineColor);
