@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'pixel_tomato.dart';
 
 // ========== 设置页 Widget ==========
 class SettingsPage extends StatelessWidget {
@@ -276,7 +277,7 @@ class SettingsPage extends StatelessWidget {
       decoration: _buildDashedBorder(),
       child: Row(
         children: [
-          const Icon(Icons.water_drop, color: Color(0xFFC53030), size: 24),
+          const PixelTomato(filled: true, size: 24),
           const SizedBox(width: 12),
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,

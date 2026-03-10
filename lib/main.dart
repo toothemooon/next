@@ -3,121 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'constants.dart';
+import 'widgets/pixel_tomato.dart';
 import 'widgets/settings_page.dart';
 import 'widgets/statistics_page.dart';
-
-// ════════════════════════════════════════
-// 🎨 主题颜色
-// ════════════════════════════════════════
-class AppColors {
-  static const Color bg        = Color(0xFFF2EFE2);
-  static const Color bg2       = Color(0xFFE8E4D4);
-  static const Color pixelGrid = Color(0xFFDEDACA);
-  static const Color card      = Color(0xFFECE8DA);
-  static const Color navBg     = Color(0xFFEAE6D8);
-  static const Color track     = Color(0xFFD8D4C4);
-
-  static const Color textPrimary   = Color(0xFF2A2822);
-  static const Color textSecondary = Color(0xFF9A927E);
-
-  static const Color accent    = Color(0xFF7A9E78);
-  static const Color accentD   = Color(0xFF567A54);
-  static const Color accentL   = Color(0xFFA8C4A6);
-
-  static const Color tomRed    = Color(0xFFC84A32);
-  static const Color tomRedL   = Color(0xFFE07258);
-  static const Color tomRedD   = Color(0xFF96301E);
-
-  static const Color tomEmpty  = Color(0xFFD8D2C0);
-  static const Color tomEmptyD = Color(0xFFB8B2A0);
-
-  static const Color leaf      = Color(0xFF568A54);
-  static const Color leafD     = Color(0xFF3A6238);
-  static const Color leafEmpty = Color(0xFFC0C8B8);
-
-  static const Color secondary = Color(0xFFB87858);
-}
-
-// ════════════════════════════════════════
-// ✍️ 文字样式
-// ════════════════════════════════════════
-class AppTextStyles {
-  static const TextStyle time = TextStyle(
-    fontFamily: 'Courier',
-    fontSize: 64,
-    fontWeight: FontWeight.bold,
-    letterSpacing: -2,
-    color: AppColors.textPrimary,
-  );
-
-  static const TextStyle timeSmall = TextStyle(
-    fontFamily: 'Courier',
-    fontSize: 48,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
-  );
-
-  static const TextStyle label = TextStyle(
-    fontSize: 12,
-    letterSpacing: 1.5,
-    color: AppColors.textSecondary,
-  );
-
-  static const TextStyle labelAccent = TextStyle(
-    fontSize: 14,
-    letterSpacing: 2,
-    color: AppColors.accent,
-    fontWeight: FontWeight.w500,
-  );
-
-  static const TextStyle tabActive = TextStyle(
-    fontSize: 13,
-    color: Colors.white,
-    fontWeight: FontWeight.w600,
-  );
-
-  static const TextStyle tabInactive = TextStyle(
-    fontSize: 13,
-    color: AppColors.textSecondary,
-  );
-
-  static const TextStyle btnPrimary = TextStyle(
-    fontSize: 17,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-    letterSpacing: 0.5,
-  );
-
-  static const TextStyle btnSecondary = TextStyle(
-    fontSize: 14,
-    color: AppColors.secondary,
-    fontWeight: FontWeight.w500,
-  );
-
-  static const TextStyle taskItem = TextStyle(
-    fontSize: 14,
-    color: AppColors.textPrimary,
-  );
-
-  static const TextStyle taskDone = TextStyle(
-    fontSize: 14,
-    color: AppColors.textSecondary,
-    decoration: TextDecoration.lineThrough,
-  );
-
-  static const TextStyle sectionLabel = TextStyle(
-    fontSize: 11,
-    color: AppColors.accentD,
-    fontFamily: 'Courier',
-    letterSpacing: 0.5,
-  );
-
-  static const TextStyle count = TextStyle(
-    fontFamily: 'Courier',
-    fontSize: 13,
-    color: AppColors.textSecondary,
-  );
-}
 
 // ════════════════════════════════════════
 // 🔄 阶段枚举
@@ -352,88 +241,11 @@ class TomatoRow extends StatelessWidget {
       children: List.generate(total, (i) {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 5),
-          child: _PixelTomato(filled: i < completed),
+          child: PixelTomato(filled: i < completed),
         );
       }),
     );
   }
-}
-
-class _PixelTomato extends StatelessWidget {
-  final bool filled;
-  final double size;
-
-  const _PixelTomato({this.filled = false, this.size = 24});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size * 1.2),
-      painter: _TomatoPainter(filled: filled),
-    );
-  }
-}
-
-class _TomatoPainter extends CustomPainter {
-  final bool filled;
-  _TomatoPainter({required this.filled});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final px = size.width / 9;
-
-    final bodyColor  = filled ? AppColors.tomRed    : AppColors.tomEmpty;
-    final hiColor    = filled ? AppColors.tomRedL   : AppColors.bg;
-    final leafColor  = filled ? AppColors.leaf      : AppColors.leafEmpty;
-    final shadowColor= filled ? AppColors.tomRedD   : AppColors.tomEmptyD;
-    final outlineColor= filled ? null : AppColors.tomEmptyD;
-
-    void dot(int gx, int gy, Color c) {
-      final rect = Rect.fromLTWH(
-        (gx) * px, (gy) * px,
-        px - 0.5, px - 0.5,
-      );
-      canvas.drawRect(rect, Paint()..color = c);
-    }
-
-    // Stem & Leaves
-    dot(4, 0, leafColor);
-    dot(4, 1, leafColor);
-    dot(2,1,leafColor); dot(3,1,leafColor);
-    dot(1,2,leafColor); dot(2,2,leafColor);
-    dot(5,1,leafColor); dot(6,1,leafColor);
-    dot(6,2,leafColor); dot(7,2,leafColor);
-    dot(3,2,leafColor); dot(4,2,leafColor); dot(5,2,leafColor);
-
-    // Body
-    for (final gx in [2,3,4,5,6]) dot(gx,3,bodyColor);
-    dot(1,3,shadowColor); dot(7,3,shadowColor);
-    for (int gx=1; gx<=7; gx++) dot(gx,4,bodyColor);
-    dot(0,4,shadowColor); dot(8,4,shadowColor);
-    for (int gx=0; gx<=8; gx++) dot(gx,5,bodyColor);
-    for (int gx=0; gx<=8; gx++) dot(gx,6,bodyColor);
-    dot(0,6,shadowColor); dot(8,6,shadowColor);
-    for (int gx=1; gx<=7; gx++) dot(gx,7,bodyColor);
-    dot(1,7,shadowColor); dot(7,7,shadowColor);
-    for (final gx in [2,3,4,5,6]) dot(gx,8,bodyColor);
-    dot(2,8,shadowColor); dot(6,8,shadowColor);
-    for (final gx in [3,4,5]) dot(gx,9,shadowColor);
-
-    // Highlight
-    if (filled) {
-      dot(1,4,hiColor); dot(2,4,hiColor);
-      dot(1,5,hiColor);
-    }
-
-    // Outline for empty
-    if (outlineColor != null) {
-      dot(1,3,outlineColor); dot(7,3,outlineColor);
-      dot(0,4,outlineColor); dot(8,4,outlineColor);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_TomatoPainter old) => old.filled != filled;
 }
 
 // ════════════════════════════════════════
@@ -1001,49 +813,6 @@ class TimerView extends StatelessWidget {
       ],
     );
   }
-
-  // Widget _buildStatusBar() {
-  //   return Container(
-  //     color: AppColors.bg2,
-  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-  //     child: Row(
-  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //       children: [
-  //         Text('9:41', style: AppTextStyles.label),
-  //         Row(
-  //           children: List.generate(
-  //             3,
-  //             (i) => Container(
-  //               width: 8, height: 8,
-  //               margin: const EdgeInsets.only(left: 3),
-  //               color: i < 3 ? AppColors.accent : AppColors.track,
-  //             ),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildAppBadge() {
-  //   return Container(
-  //     margin: const EdgeInsets.only(top: 8),
-  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-  //     decoration: BoxDecoration(
-  //       color: AppColors.accentD,
-  //       border: Border.all(color: AppColors.accent, width: 1),
-  //     ),
-  //     child: const Text(
-  //       'TOMATO',
-  //       style: TextStyle(
-  //         color: Colors.white,
-  //         fontSize: 11,
-  //         fontFamily: 'Courier',
-  //         letterSpacing: 2,
-  //       ),
-  //     ),
-  //   );
-  // }
 }
 // ════════════════════════════════════════
 // 🚀 入口函数

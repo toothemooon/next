@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'pixel_tomato.dart';
 
 // ========== 统计页 Widget ==========
 class StatisticsPage extends StatelessWidget {
@@ -191,9 +192,8 @@ class StatisticsPage extends StatelessWidget {
                     4,
                     (index) => Padding(
                       padding: const EdgeInsets.only(right: 8),
-                      child: Icon(
-                        Icons.water_drop, // 用滴状图标代替番茄
-                        color: index < 3 ? const Color(0xFFC53030) : const Color(0xFFCBD5E0),
+                      child: PixelTomato(
+                        filled: index < 3,
                         size: 32,
                       ),
                     ),
