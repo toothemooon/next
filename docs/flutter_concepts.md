@@ -118,9 +118,24 @@ context.read<PomodoroState>().start()
 Consumer<PomodoroState>(builder: (ctx, state, _) => Text(state.timeString))
 ```
 
+## 6. fl_chart 包
+
+`fl_chart` 是 Flutter 常用的图表绘制库，用于统计页面的柱状图展示。
+
+```
+pubspec.yaml:
+  dependencies:
+    fl_chart: ^1.1.1
+```
+
+本项目中用于实现：
+- 本周番茄完成趋势柱状图
+- 支持自定义颜色、样式、坐标轴标签
+- 内置交互动画和触摸反馈
+
 ---
 
-## 6. dart:async — Timer
+## 7. dart:async — Timer
 
 Flutter 用 Dart 的 `Timer` 实现定期任务：
 
@@ -138,7 +153,7 @@ _timer?.cancel();
 
 ---
 
-## 7. enum (枚举)
+## 8. enum (枚举)
 
 枚举用于表示一组固定选项：
 
@@ -171,7 +186,7 @@ enum Phase {
 
 ---
 
-## 8. 常用布局 Widget 速查
+## 9. 常用布局 Widget 速查
 
 ```dart
 // 垂直排列
@@ -222,7 +237,7 @@ Container(
 
 ---
 
-## 9. Hot Reload vs Hot Restart
+## 10. Hot Reload vs Hot Restart
 
 | | Hot Reload (`r`) | Hot Restart (`R`) |
 |---|---|---|
@@ -235,7 +250,7 @@ Container(
 
 ---
 
-## 10. SafeArea
+## 11. SafeArea
 
 ```dart
 SafeArea(child: Column(...))

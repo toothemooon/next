@@ -73,6 +73,7 @@ class PomodoroState extends ChangeNotifier {
 ### 字段（Fields）
 
 ```dart
+static const int totalTomatoes = 4;  // 每轮番茄总数
 Phase _phase      = Phase.focus;    // 当前阶段
 int _timeLeft     = 25 * 60;       // 剩余秒数
 bool _isRunning   = false;         // 是否运行中
@@ -98,7 +99,13 @@ String get timeString {
 }
 
 // completed 对 4 取余，用于显示当前轮进度
-int get completed => _completed % 4;
+int get completed => _completed % totalTomatoes;
+
+// 累计完成的番茄总数
+int get totalCompleted=> _completed;
+
+// 任务列表的只读副本
+List<Task> get tasks  => List.unmodifiable(_tasks);
 ```
 
 ### 方法（Methods）
@@ -110,8 +117,10 @@ int get completed => _completed % 4;
 | `abandon()` | 点击"打断/废弃" | 取消 Timer + 重置时间 |
 | `switchPhase(p)` | 点击 Tab | 切换阶段 + 重置时间 |
 | `toggleTask(id)` | 点击任务行 | 切换任务完成状态 |
-| `addTask(text)` | (预留) | 添加任务 |
+| `addTask(text)` | 点击"添加任务" | 添加新任务 |
+| `deleteTask(id)` | 左滑删除任务 | 删除指定任务 |
 | `_tick(t)` | 每秒自动调用 | 倒计时 -1秒，完成检测 |
+| `_sortTasks()` | 内部调用 | 任务排序（未完成在前，已完成在后） |
 
 ### 计时完成逻辑
 
@@ -163,3 +172,13 @@ void dispose() {
 ```
 
 `ChangeNotifier` 被销毁时调用 `dispose()`，在这里清理 `Timer`。
+
+## 多页面状态共享
+
+由于 `ChangeNotifierProvider` 在应用根节点注入，所有页面都可以访问和修改 `PomodoroState`：
+
+- **TimerView** - 读取计时状态、控制计时器、管理任务
+- **StatisticsPage** - 读取统计数据（完成数、总时长等）
+- **SettingsPage** - 修改配置参数（未来实现）
+
+这种设计保证了状态在整个应用中的一致性，任何页面修改状态后，其他页面都会自动更新。
