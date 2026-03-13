@@ -105,11 +105,52 @@ class PomodoroState extends ChangeNotifier {
 
   Timer? _timer;
 
+  // Settings
+  int _focusDuration = 25 * 60;
+  int _shortBreakDuration = 5 * 60;
+  int _longBreakDuration = 15 * 60;
+  int _longBreakInterval = 4;
+  bool _soundEnabled = true;
+  bool _vibrationEnabled = true;
+  bool _autoStartBreak = false;
+  bool _autoStartFocus = false;
+  bool _showNotifications = false;
+  bool _lockTask = false;
+  int _themeIndex = 0;
+
   PomodoroState() {
     _loadData();
   }
+  
+  int _getPhaseDuration(Phase p) {
+    switch (p) {
+      case Phase.focus: return _focusDuration;
+      case Phase.shortBreak: return _shortBreakDuration;
+      case Phase.longBreak: return _longBreakDuration;
+    }
+  }
+
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // Load Settings
+    _focusDuration = prefs.getInt('focus_duration') ?? 25 * 60;
+    _shortBreakDuration = prefs.getInt('short_break_duration') ?? 5 * 60;
+    _longBreakDuration = prefs.getInt('long_break_duration') ?? 15 * 60;
+    _longBreakInterval = prefs.getInt('long_break_interval') ?? 4;
+    _soundEnabled = prefs.getBool('sound_enabled') ?? true;
+    _vibrationEnabled = prefs.getBool('vibration_enabled') ?? true;
+    _autoStartBreak = prefs.getBool('auto_start_break') ?? false;
+    _autoStartFocus = prefs.getBool('auto_start_focus') ?? false;
+    _showNotifications = prefs.getBool('show_notifications') ?? false;
+    _lockTask = prefs.getBool('lock_task') ?? true;
+    _themeIndex = prefs.getInt('theme_index') ?? 0;
+
+    // Adjust timeLeft based on loaded settings if not running
+    if (!_isRunning) {
+      _timeLeft = _getPhaseDuration(_phase);
+    }
+
     final String? tasksJson = prefs.getString('tasks_data');
     if (tasksJson != null) {
       try {
@@ -140,14 +181,78 @@ class PomodoroState extends ChangeNotifier {
     final String historyJsonStr = json.encode(_history.map((h) => h.toJson()).toList());
     await prefs.setString('history_data', historyJsonStr);
   }
+  
+  Future<void> _saveSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('focus_duration', _focusDuration);
+    await prefs.setInt('short_break_duration', _shortBreakDuration);
+    await prefs.setInt('long_break_duration', _longBreakDuration);
+    await prefs.setInt('long_break_interval', _longBreakInterval);
+    await prefs.setBool('sound_enabled', _soundEnabled);
+    await prefs.setBool('vibration_enabled', _vibrationEnabled);
+    await prefs.setBool('auto_start_break', _autoStartBreak);
+    await prefs.setBool('auto_start_focus', _autoStartFocus);
+    await prefs.setBool('show_notifications', _showNotifications);
+    await prefs.setBool('lock_task', _lockTask);
+    await prefs.setInt('theme_index', _themeIndex);
+  }
   Phase get phase       => _phase;
   int get timeLeft      => _timeLeft;
   bool get isRunning    => _isRunning;
-  int get completed     => _completed % totalTomatoes;
+  int get completed     => _completed % _longBreakInterval;
   int get totalCompleted=> _completed;
   bool get justDone     => _justDone;
   List<Task> get tasks  => List.unmodifiable(_tasks);
   List<FocusSession> get history => List.unmodifiable(_history);
+
+  // Settings Getters
+  int get focusDuration => _focusDuration ~/ 60;
+  int get shortBreakDuration => _shortBreakDuration ~/ 60;
+  int get longBreakDuration => _longBreakDuration ~/ 60;
+  int get longBreakInterval => _longBreakInterval;
+  bool get soundEnabled => _soundEnabled;
+  bool get vibrationEnabled => _vibrationEnabled;
+  bool get autoStartBreak => _autoStartBreak;
+  bool get autoStartFocus => _autoStartFocus;
+  bool get showNotifications => _showNotifications;
+  bool get lockTask => _lockTask;
+  int get themeIndex => _themeIndex;
+
+  // Settings Setters
+  void updateFocusDuration(int minutes) {
+    if (minutes < 1 || minutes > 90) return;
+    _focusDuration = minutes * 60;
+    if (!_isRunning && _phase == Phase.focus) _timeLeft = _focusDuration;
+    _saveSettings();
+    notifyListeners();
+  }
+  void updateShortBreakDuration(int minutes) {
+    if (minutes < 1 || minutes > 30) return;
+    _shortBreakDuration = minutes * 60;
+    if (!_isRunning && _phase == Phase.shortBreak) _timeLeft = _shortBreakDuration;
+    _saveSettings();
+    notifyListeners();
+  }
+  void updateLongBreakDuration(int minutes) {
+    if (minutes < 1 || minutes > 60) return;
+    _longBreakDuration = minutes * 60;
+    if (!_isRunning && _phase == Phase.longBreak) _timeLeft = _longBreakDuration;
+    _saveSettings();
+    notifyListeners();
+  }
+  void updateLongBreakInterval(int count) {
+    if (count < 1 || count > 10) return;
+    _longBreakInterval = count;
+    _saveSettings();
+    notifyListeners();
+  }
+  void toggleSound(bool value) { _soundEnabled = value; _saveSettings(); notifyListeners(); }
+  void toggleVibration(bool value) { _vibrationEnabled = value; _saveSettings(); notifyListeners(); }
+  void toggleAutoStartBreak(bool value) { _autoStartBreak = value; _saveSettings(); notifyListeners(); }
+  void toggleAutoStartFocus(bool value) { _autoStartFocus = value; _saveSettings(); notifyListeners(); }
+  void toggleShowNotifications(bool value) { _showNotifications = value; _saveSettings(); notifyListeners(); }
+  void toggleLockTask(bool value) { _lockTask = value; _saveSettings(); notifyListeners(); }
+  void setThemeIndex(int index) { _themeIndex = index; _saveSettings(); notifyListeners(); }
   /// 今日完成的番茄数
   int get todayCompletedCount {
     final now = DateTime.now();
@@ -196,7 +301,7 @@ class PomodoroState extends ChangeNotifier {
     return slots;
   }
   double get progress =>
-      1.0 - (_timeLeft / _phase.durationSeconds);
+      1.0 - (_timeLeft / _getPhaseDuration(_phase));
   String get timeString {
     final m = (_timeLeft ~/ 60).toString().padLeft(2, '0');
     final s = (_timeLeft % 60).toString().padLeft(2, '0');
@@ -217,7 +322,7 @@ class PomodoroState extends ChangeNotifier {
   void abandon() {
     _timer?.cancel();
     _isRunning = false;
-    _timeLeft = _phase.durationSeconds;
+    _timeLeft = _getPhaseDuration(_phase);
     _justDone = false;
     notifyListeners();
   }
@@ -225,7 +330,7 @@ class PomodoroState extends ChangeNotifier {
     _timer?.cancel();
     _isRunning = false;
     _phase = p;
-    _timeLeft = p.durationSeconds;
+    _timeLeft = _getPhaseDuration(p);
     _justDone = false;
     notifyListeners();
   }
@@ -239,7 +344,7 @@ class PomodoroState extends ChangeNotifier {
         _justDone = true;
         _history.add(FocusSession(
           timestamp: DateTime.now(),
-          durationSeconds: Phase.focus.durationSeconds,
+          durationSeconds: _getPhaseDuration(Phase.focus),
         ));
         _saveData(); // 专注完成时同步保存到本地
       }

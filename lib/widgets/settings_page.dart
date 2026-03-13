@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../main.dart';
 import 'pixel_tomato.dart';
 
 // 设置页面 Widget
@@ -12,34 +14,38 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF5F1E8), // 背景颜色
-      child: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTimerSettings(),
-                  const SizedBox(height: 24),
-                  _buildBreakSettings(),
-                  const SizedBox(height: 24),
-                  _buildNotificationSettings(),
-                  const SizedBox(height: 24),
-                  _buildToggleSettings(),
-                  const SizedBox(height: 24),
-                  _buildThemeSelector(),
-                  const SizedBox(height: 24),
-                  _buildVersionInfo(),
-                ],
+    return Consumer<PomodoroState>(
+      builder: (context, state, child) {
+        return Container(
+          color: const Color(0xFFF5F1E8), // 背景颜色
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildTimerSettings(state),
+                      const SizedBox(height: 24),
+                      _buildBreakSettings(state),
+                      const SizedBox(height: 24),
+                      _buildNotificationSettings(state),
+                      const SizedBox(height: 24),
+                      _buildToggleSettings(state),
+                      const SizedBox(height: 24),
+                      _buildThemeSelector(state),
+                      const SizedBox(height: 24),
+                      _buildVersionInfo(),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -57,7 +63,7 @@ class SettingsPage extends StatelessWidget {
   }
 
   // 构建计时器设置
-  Widget _buildTimerSettings() {
+  Widget _buildTimerSettings(PomodoroState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -71,11 +77,23 @@ class SettingsPage extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _buildCounterRow('专注时长', 25),
+              _buildCounterRow(
+                '专注时长', 
+                state.focusDuration, 
+                (v) => state.updateFocusDuration(v)
+              ),
               const Divider(height: 1, color: Color(0xFFE2E8F0)),
-              _buildCounterRow('短休息', 5),
+              _buildCounterRow(
+                '短休息', 
+                state.shortBreakDuration,
+                (v) => state.updateShortBreakDuration(v)
+              ),
               const Divider(height: 1, color: Color(0xFFE2E8F0)),
-              _buildCounterRow('长休息', 15),
+              _buildCounterRow(
+                '长休息', 
+                state.longBreakDuration,
+                (v) => state.updateLongBreakDuration(v)
+              ),
             ],
           ),
         ),
@@ -84,7 +102,7 @@ class SettingsPage extends StatelessWidget {
   }
 
   // 构建计数器行（如专注时长）
-  Widget _buildCounterRow(String label, int value) {
+  Widget _buildCounterRow(String label, int value, ValueChanged<int> onChanged) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -92,7 +110,7 @@ class SettingsPage extends StatelessWidget {
           Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF2D3748)))),
           Row(
             children: [
-              _buildCounterButton('-', () {}),
+              _buildCounterButton('-', () => onChanged(value - 1)),
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -102,7 +120,7 @@ class SettingsPage extends StatelessWidget {
                 ),
                 child: Text('$value', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               ),
-              _buildCounterButton('+', () {}),
+              _buildCounterButton('+', () => onChanged(value + 1)),
             ],
           ),
         ],
@@ -130,7 +148,7 @@ class SettingsPage extends StatelessWidget {
   }
 
   // 构建休息设置
-  Widget _buildBreakSettings() {
+  Widget _buildBreakSettings(PomodoroState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -147,14 +165,21 @@ class SettingsPage extends StatelessWidget {
             children: [
               const Icon(Icons.notifications_active, color: Color(0xFF6B8E5E), size: 20),
               const SizedBox(width: 8),
-              const Expanded(child: Text('每完成4个番茄钟后长休息', style: TextStyle(fontSize: 14, color: Color(0xFF2D3748)))),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6B8E5E),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text('8', style: TextStyle(color: Colors.white, fontSize: 12)),
+              Expanded(child: Text('每完成${state.longBreakInterval}个番茄钟后长休息', style: const TextStyle(fontSize: 14, color: Color(0xFF2D3748)))),
+              Row(
+                children: [
+                  _buildCounterButton('-', () => state.updateLongBreakInterval(state.longBreakInterval - 1)),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6B8E5E),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text('${state.longBreakInterval}', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                  ),
+                  _buildCounterButton('+', () => state.updateLongBreakInterval(state.longBreakInterval + 1)),
+                ],
               ),
             ],
           ),
@@ -164,7 +189,7 @@ class SettingsPage extends StatelessWidget {
   }
 
   // 构建通知设置
-  Widget _buildNotificationSettings() {
+  Widget _buildNotificationSettings(PomodoroState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -178,9 +203,9 @@ class SettingsPage extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _buildSwitchRow('声音提醒', true),
+              _buildSwitchRow('声音提醒', state.soundEnabled, state.toggleSound),
               const Divider(height: 1, color: Color(0xFFE2E8F0)),
-              _buildSwitchRow('震动', true),
+              _buildSwitchRow('震动', state.vibrationEnabled, state.toggleVibration),
             ],
           ),
         ),
@@ -189,7 +214,7 @@ class SettingsPage extends StatelessWidget {
   }
 
   // 构建开关行
-  Widget _buildSwitchRow(String label, bool value) {
+  Widget _buildSwitchRow(String label, bool value, ValueChanged<bool> onChanged) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -199,7 +224,7 @@ class SettingsPage extends StatelessWidget {
             scale: 0.8,
             child: Switch(
               value: value,
-              onChanged: (val) {},
+              onChanged: onChanged,
               activeColor: const Color(0xFF6B8E5E),
               activeTrackColor: const Color(0xFF9FB8A4).withOpacity(0.5),
             ),
@@ -210,7 +235,7 @@ class SettingsPage extends StatelessWidget {
   }
 
   // 构建其他设置
-  Widget _buildToggleSettings() {
+  Widget _buildToggleSettings(PomodoroState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -224,13 +249,13 @@ class SettingsPage extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _buildSwitchRow('自动开始休息', true),
+              _buildSwitchRow('自动开始休息', state.autoStartBreak, state.toggleAutoStartBreak),
               const Divider(height: 1, color: Color(0xFFE2E8F0)),
-              _buildSwitchRow('自动开始专注', true),
+              _buildSwitchRow('自动开始专注', state.autoStartFocus, state.toggleAutoStartFocus),
               const Divider(height: 1, color: Color(0xFFE2E8F0)),
-              _buildSwitchRow('显示通知计数', false),
+              _buildSwitchRow('显示通知计数', state.showNotifications, state.toggleShowNotifications),
               const Divider(height: 1, color: Color(0xFFE2E8F0)),
-              _buildSwitchRow('锁定任务', true),
+              _buildSwitchRow('锁定任务', state.lockTask, state.toggleLockTask),
             ],
           ),
         ),
@@ -239,7 +264,7 @@ class SettingsPage extends StatelessWidget {
   }
 
   // 构建主题选择
-  Widget _buildThemeSelector() {
+  Widget _buildThemeSelector(PomodoroState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -251,11 +276,11 @@ class SettingsPage extends StatelessWidget {
           decoration: _buildDashedBorder(),
           child: Row(
             children: [
-              _buildThemeOption(const Color(0xFF6B8E5E), true),
+              _buildThemeOption(const Color(0xFF6B8E5E), state.themeIndex == 0, () => state.setThemeIndex(0)),
               const SizedBox(width: 12),
-              _buildThemeOption(const Color(0xFF5A6C8E), false),
+              _buildThemeOption(const Color(0xFF5A6C8E), state.themeIndex == 1, () => state.setThemeIndex(1)),
               const SizedBox(width: 12),
-              _buildThemeOption(const Color(0xFF5A8E9F), false),
+              _buildThemeOption(const Color(0xFF5A8E9F), state.themeIndex == 2, () => state.setThemeIndex(2)),
             ],
           ),
         ),
@@ -264,20 +289,23 @@ class SettingsPage extends StatelessWidget {
   }
 
   // 构建单个主题选项
-  Widget _buildThemeOption(Color color, bool isSelected) {
+  Widget _buildThemeOption(Color color, bool isSelected, VoidCallback onTap) {
     return Expanded(
-      child: Container(
-        height: 40,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF2D3748) : Colors.transparent,
-            width: 2,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 40,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF2D3748) : Colors.transparent,
+              width: 2,
+            ),
           ),
+          // 选中样式：显示白色对勾图标
+          child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
         ),
-        // 选中样式：显示白色对勾图标
-        child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
       ),
     );
   }
