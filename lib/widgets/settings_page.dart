@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
+import '../constants.dart';
 import 'pixel_tomato.dart';
 
 // 设置页面 Widget
@@ -17,7 +18,7 @@ class SettingsPage extends StatelessWidget {
     return Consumer<PomodoroState>(
       builder: (context, state, child) {
         return Container(
-          color: const Color(0xFFF5F1E8), // 背景颜色
+          color: AppColors.bg, // 背景颜色
           child: Column(
             children: [
               _buildHeader(),
@@ -53,10 +54,10 @@ class SettingsPage extends StatelessWidget {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 44, 16, 16),
-      child: const Row(
+      child: Row(
         children: [
-          // 顶部代码风格标题（视觉提示，非功能注释）
-          Text('// 设置', style: TextStyle(fontSize: 14, color: Color(0xFF718096), fontFamily: 'monospace')),
+          // 顶部代码风格标题
+          Text('// 设置', style: AppTextStyles.sectionLabel),
         ],
       ),
     );
@@ -67,12 +68,12 @@ class SettingsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('// 计时器', style: _getCodeStyle()),
+        Text('// 计时器', style: AppTextStyles.sectionLabel),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.5),
+            color: AppColors.card,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -82,13 +83,13 @@ class SettingsPage extends StatelessWidget {
                 state.focusDuration, 
                 (v) => state.updateFocusDuration(v)
               ),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Divider(height: 1, color: AppColors.pixelGrid),
               _buildCounterRow(
                 '短休息', 
                 state.shortBreakDuration,
                 (v) => state.updateShortBreakDuration(v)
               ),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Divider(height: 1, color: AppColors.pixelGrid),
               _buildCounterRow(
                 '长休息', 
                 state.longBreakDuration,
@@ -107,7 +108,7 @@ class SettingsPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF2D3748)))),
+          Expanded(child: Text(label, style: TextStyle(fontSize: 14, color: AppColors.textPrimary))),
           Row(
             children: [
               _buildCounterButton('-', () => onChanged(value - 1)),
@@ -115,10 +116,10 @@ class SettingsPage extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F1E8),
+                  color: AppColors.bg,
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: Text('$value', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                child: Text('$value', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
               ),
               _buildCounterButton('+', () => onChanged(value + 1)),
             ],
@@ -136,12 +137,12 @@ class SettingsPage extends StatelessWidget {
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: const Color(0xFF9FB8A4).withOpacity(0.3),
+          color: AppColors.accent.withOpacity(0.2),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: const Color(0xFF9FB8A4)),
+          border: Border.all(color: AppColors.accent),
         ),
         child: Center(
-          child: Text(text, style: const TextStyle(fontSize: 18, color: Color(0xFF2D3748))),
+          child: Text(text, style: TextStyle(fontSize: 18, color: AppColors.textPrimary)),
         ),
       ),
     );
@@ -152,20 +153,20 @@ class SettingsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('// 休息提醒', style: _getCodeStyle()),
+        Text('// 休息提醒', style: AppTextStyles.sectionLabel),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xC8D4B2).withOpacity(0.3),
+            color: AppColors.accent.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFF9FB8A4).withOpacity(0.5)),
+            border: Border.all(color: AppColors.accent.withOpacity(0.3)),
           ),
           child: Row(
             children: [
-              const Icon(Icons.notifications_active, color: Color(0xFF6B8E5E), size: 20),
+              Icon(Icons.notifications_active, color: AppColors.accent, size: 20),
               const SizedBox(width: 8),
-              Expanded(child: Text('每完成${state.longBreakInterval}个番茄钟后长休息', style: const TextStyle(fontSize: 14, color: Color(0xFF2D3748)))),
+              Expanded(child: Text('每完成${state.longBreakInterval}个番茄钟后长休息', style: TextStyle(fontSize: 14, color: AppColors.textPrimary))),
               Row(
                 children: [
                   _buildCounterButton('-', () => state.updateLongBreakInterval(state.longBreakInterval - 1)),
@@ -173,7 +174,7 @@ class SettingsPage extends StatelessWidget {
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6B8E5E),
+                      color: AppColors.accent,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text('${state.longBreakInterval}', style: const TextStyle(color: Colors.white, fontSize: 12)),
@@ -193,18 +194,18 @@ class SettingsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('// 通知', style: _getCodeStyle()),
+        Text('// 通知', style: AppTextStyles.sectionLabel),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.5),
+            color: AppColors.card,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
             children: [
               _buildSwitchRow('声音提醒', state.soundEnabled, state.toggleSound),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Divider(height: 1, color: AppColors.pixelGrid),
               _buildSwitchRow('震动', state.vibrationEnabled, state.toggleVibration),
             ],
           ),
@@ -219,14 +220,14 @@ class SettingsPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF2D3748)))),
+          Expanded(child: Text(label, style: TextStyle(fontSize: 14, color: AppColors.textPrimary))),
           Transform.scale(
             scale: 0.8,
             child: Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: const Color(0xFF6B8E5E),
-              activeTrackColor: const Color(0xFF9FB8A4).withOpacity(0.5),
+              activeColor: AppColors.accent,
+              activeTrackColor: AppColors.accent.withOpacity(0.3),
             ),
           ),
         ],
@@ -239,22 +240,22 @@ class SettingsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('// 其他设置', style: _getCodeStyle()),
+        Text('// 其他设置', style: AppTextStyles.sectionLabel),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.5),
+            color: AppColors.card,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
             children: [
               _buildSwitchRow('自动开始休息', state.autoStartBreak, state.toggleAutoStartBreak),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Divider(height: 1, color: AppColors.pixelGrid),
               _buildSwitchRow('自动开始专注', state.autoStartFocus, state.toggleAutoStartFocus),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Divider(height: 1, color: AppColors.pixelGrid),
               _buildSwitchRow('显示通知计数', state.showNotifications, state.toggleShowNotifications),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Divider(height: 1, color: AppColors.pixelGrid),
               _buildSwitchRow('锁定任务', state.lockTask, state.toggleLockTask),
             ],
           ),
@@ -268,8 +269,7 @@ class SettingsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 主题选择区：展示多个色块，选中项显示勾
-        Text('// 主题', style: _getCodeStyle()),
+        Text('// 主题', style: AppTextStyles.sectionLabel),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(12),
@@ -278,9 +278,9 @@ class SettingsPage extends StatelessWidget {
             children: [
               _buildThemeOption(const Color(0xFF6B8E5E), state.themeIndex == 0, () => state.setThemeIndex(0)),
               const SizedBox(width: 12),
-              _buildThemeOption(const Color(0xFF5A6C8E), state.themeIndex == 1, () => state.setThemeIndex(1)),
+              _buildThemeOption(const Color(0xFF3E5A7A), state.themeIndex == 1, () => state.setThemeIndex(1)),
               const SizedBox(width: 12),
-              _buildThemeOption(const Color(0xFF5A8E9F), state.themeIndex == 2, () => state.setThemeIndex(2)),
+              _buildThemeOption(const Color(0xFF5A9E9F), state.themeIndex == 2, () => state.setThemeIndex(2)),
             ],
           ),
         ),
@@ -299,11 +299,10 @@ class SettingsPage extends StatelessWidget {
             color: color,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: isSelected ? const Color(0xFF2D3748) : Colors.transparent,
+              color: isSelected ? AppColors.textPrimary : Colors.transparent,
               width: 2,
             ),
           ),
-          // 选中样式：显示白色对勾图标
           child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
         ),
       ),
@@ -317,25 +316,23 @@ class SettingsPage extends StatelessWidget {
       decoration: _buildDashedBorder(),
       child: Row(
         children: [
-          // 小番茄图标作为品牌/标识
           const PixelTomato(filled: true, size: 24),
           const SizedBox(width: 12),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Tomato', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2D3748))),
-              SizedBox(height: 2),
-              Text('Pixel Zen Pomodoro v1.0', style: TextStyle(fontSize: 12, color: Color(0xFF718096))),
+              Text('Tomato', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              const SizedBox(height: 2),
+              Text('Pixel Zen Pomodoro v1.0', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
             ],
           ),
           const Spacer(),
-          // 右侧开关（示例），目前为占位
           Transform.scale(
             scale: 0.8,
             child: Switch(
               value: false,
               onChanged: (val) {},
-              activeColor: const Color(0xFF6B8E5E),
+              activeColor: AppColors.accent,
             ),
           ),
         ],
@@ -346,13 +343,13 @@ class SettingsPage extends StatelessWidget {
   // 辅助方法：构建虚线边框
   BoxDecoration _buildDashedBorder() {
     return BoxDecoration(
-      border: Border.all(color: const Color(0xFF9FB8A4).withOpacity(0.3), width: 1),
+      border: Border.all(color: AppColors.accent.withOpacity(0.3), width: 1),
       borderRadius: BorderRadius.circular(8),
     );
   }
 
   // 辅助方法：获取代码风格文本样式
   TextStyle _getCodeStyle() {
-    return const TextStyle(fontSize: 14, color: Color(0xFF718096), fontFamily: 'monospace');
+    return AppTextStyles.sectionLabel;
   }
 }

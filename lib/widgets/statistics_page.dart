@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
+import '../constants.dart';
 import 'pixel_tomato.dart';
 
 // 统计页面：展示番茄钟的关键统计信息与可视化（卡片、柱状图、今日番茄、时间段分布、明细）
@@ -17,7 +18,7 @@ class StatisticsPage extends StatelessWidget {
     return Consumer<PomodoroState>(
       builder: (context, state, child) {
         return Container(
-          color: const Color(0xFFF5F1E8), // 米色背景
+          color: AppColors.bg, // 背景颜色
           child: Column(
             children: [
               _buildHeader(),
@@ -54,7 +55,7 @@ class StatisticsPage extends StatelessWidget {
       child: Row(
         children: [
           // 标题显示为“// 统计”，使用等宽字体样式与设置页保持统一视觉风格
-          Text('// 统计', style: _getCodeStyle()),
+          Text('// 统计', style: AppTextStyles.sectionLabel),
           const Spacer(),
           _buildPeriodSelector(),
         ],
@@ -84,14 +85,14 @@ class StatisticsPage extends StatelessWidget {
   Widget _buildStatItem(String value, String label, String change, bool isPositive) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF2D3748))),
+        Text(value, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF718096))),
+        Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
         if (change.isNotEmpty)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: isPositive ? const Color(0xC8D4B2).withOpacity(0.5) : const Color(0xFFE53E3E).withOpacity(0.2),
+              color: isPositive ? AppColors.accent.withOpacity(0.5) : AppColors.tomRed.withOpacity(0.2),
               borderRadius: BorderRadius.circular(4),
             ),
             // 变动标签：根据是否为正向增长选择不同背景与文字颜色
@@ -99,7 +100,7 @@ class StatisticsPage extends StatelessWidget {
               change,
               style: TextStyle(
                 fontSize: 10,
-                color: isPositive ? const Color(0xFF4A7C59) : const Color(0xFFE53E3E),
+                color: isPositive ? AppColors.leaf : AppColors.tomRed,
               ),
             ),
           ),
@@ -108,7 +109,7 @@ class StatisticsPage extends StatelessWidget {
   }
 
   Widget _buildVerticalDivider() {
-    return Container(height: 40, width: 1, color: const Color(0xFFE2E8F0));
+    return Container(height: 40, width: 1, color: AppColors.pixelGrid);
   }
 
   // 图表区域
@@ -140,7 +141,7 @@ class StatisticsPage extends StatelessWidget {
                     showTitles: true,
                     getTitlesWidget: (value, meta) => Text(
                       value.toInt().toString(),
-                      style: const TextStyle(fontSize: 10, color: Color(0xFF718096)),
+                      style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
                     ),
                     reservedSize: 28,
                   ),
@@ -165,7 +166,7 @@ class StatisticsPage extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Text(
                           text,
-                          style: const TextStyle(fontSize: 10, color: Color(0xFF718096)),
+                          style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
                         ),
                       );
                     },
@@ -182,7 +183,7 @@ class StatisticsPage extends StatelessWidget {
                   barRods: [
                     BarChartRodData(
                       toY: weeklyData[i].toDouble(),
-                      color: isToday ? const Color(0xFF6B8E5E) : const Color(0xFF9FB8A4),
+                      color: isToday ? AppColors.accent : AppColors.accentL,
                       width: 16,
                     )
                   ],
@@ -225,15 +226,15 @@ class StatisticsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text('$current / $target 距离长休息', style: const TextStyle(fontSize: 12, color: Color(0xFF718096))),
+                Text('$current / $target 距离长休息', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
           ),
           Container(
             width: 60,
             height: 60,
-            decoration: const BoxDecoration(
-              color: Color(0xFF9FB8A4),
+            decoration: BoxDecoration(
+              color: AppColors.accent,
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.check, color: Colors.white),
@@ -315,8 +316,8 @@ class StatisticsPage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // 左侧为统计项标签，右侧为对应的值
-        Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF718096))),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2D3748))),
+        Text(label, style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
       ],
     );
   }
@@ -337,7 +338,7 @@ class StatisticsPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF6B8E5E),
+        color: AppColors.accent,
         borderRadius: BorderRadius.circular(4),
       ),
       child: const Text('周', style: TextStyle(color: Colors.white, fontSize: 12)),

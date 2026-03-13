@@ -145,6 +145,9 @@ class PomodoroState extends ChangeNotifier {
     _showNotifications = prefs.getBool('show_notifications') ?? false;
     _lockTask = prefs.getBool('lock_task') ?? true;
     _themeIndex = prefs.getInt('theme_index') ?? 0;
+    
+    // Initialize global theme
+    AppColors.setTheme(_themeIndex);
 
     // Adjust timeLeft based on loaded settings if not running
     if (!_isRunning) {
@@ -252,7 +255,12 @@ class PomodoroState extends ChangeNotifier {
   void toggleAutoStartFocus(bool value) { _autoStartFocus = value; _saveSettings(); notifyListeners(); }
   void toggleShowNotifications(bool value) { _showNotifications = value; _saveSettings(); notifyListeners(); }
   void toggleLockTask(bool value) { _lockTask = value; _saveSettings(); notifyListeners(); }
-  void setThemeIndex(int index) { _themeIndex = index; _saveSettings(); notifyListeners(); }
+  void setThemeIndex(int index) { 
+    _themeIndex = index; 
+    AppColors.setTheme(index);
+    _saveSettings(); 
+    notifyListeners(); 
+  }
   /// 今日完成的番茄数
   int get todayCompletedCount {
     final now = DateTime.now();
@@ -477,7 +485,7 @@ class PixelRingTimer extends StatelessWidget {
   const PixelRingTimer({
     super.key,
     required this.progress,
-    this.color = AppColors.accent,
+    this.color = Colors.green, // Use a fixed color or handle null in painter
     this.size = 200,
   });
 
@@ -505,7 +513,7 @@ class _PixelRingPainter extends CustomPainter {
     const steps   = 80;
 
     final trackPaint = Paint()..color = AppColors.track;
-    final activePaint = Paint()..color = color;
+    final activePaint = Paint()..color = color == Colors.green ? AppColors.accent : color;
 
     for (int i = 0; i < steps; i++) {
       final angle = -pi / 2 + (2 * pi * i / steps);
@@ -697,17 +705,16 @@ class _TaskListState extends State<TaskList> {
               autofocus: true,
               style: AppTextStyles.taskItem,
               textInputAction: TextInputAction.done,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 isDense: true,
                 border: InputBorder.none,
                 hintText: '输入任务...',
                 hintStyle: TextStyle(fontSize: 14, color: AppColors.textSecondary),
               ),
-              onSubmitted: (_) => _submit(),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.check, size: 18, color: AppColors.accentD),
+            icon: Icon(Icons.check, size: 18, color: AppColors.accentD),
             onPressed: _submit,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -782,7 +789,7 @@ class _TaskRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4), //稍微圆角一点点
                 ),
                 child: task.isDone
-                    ? const Icon(Icons.check, size: 12, color: AppColors.accentD)
+                    ? Icon(Icons.check, size: 12, color: AppColors.accentD)
                     : null,
               ),
               const SizedBox(width: 12),
@@ -847,7 +854,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
     return Container(
       height: 64,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.navBg,
         border: Border(top: BorderSide(color: AppColors.track, width: 2)),
       ),
