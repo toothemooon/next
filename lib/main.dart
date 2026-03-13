@@ -1,31 +1,23 @@
-/// Pixel Zen Pomodoro 主入口文件
-/// 包含核心业务逻辑、状态管理和主要UI组件
-/// 本文件是应用的核心，包含：
-/// - 阶段枚举定义
-/// - 任务数据模型
-/// - Pomodoro 状态管理（ChangeNotifier）
-/// - 所有核心 Widget 组件
-/// - 应用入口和根组件
+/// Pixel Zen Pomodoro
+import 'dart:convert';
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'constants.dart';
 import 'widgets/pixel_tomato.dart';
 import 'widgets/settings_page.dart';
 import 'widgets/statistics_page.dart';
 
 // ════════════════════════════════════════
-// 🔄 阶段枚举
+// 🔄 阶段枚举 (Phase)
 // ════════════════════════════════════════
-/// 番茄钟的三个计时阶段
 enum Phase {
-  focus,      // 专注阶段
-  shortBreak, // 短休息阶段
-  longBreak;  // 长休息阶段
-
-  /// 阶段的中文显示名称
+  focus,
+  shortBreak,
+  longBreak;
   String get label {
     switch (this) {
       case Phase.focus:      return '专注';
@@ -33,8 +25,6 @@ enum Phase {
       case Phase.longBreak:  return '长休';
     }
   }
-
-  /// 阶段的默认持续时间（秒）
   int get durationSeconds {
     switch (this) {
       case Phase.focus:      return 25 * 60;
@@ -45,68 +35,173 @@ enum Phase {
 }
 
 // ════════════════════════════════════════
-// 📋 任务模型
+// 📋 数据模型 (Models)
 // ════════════════════════════════════════
-/// 任务数据模型，代表今日任务列表中的单个任务
 class Task {
-  final String id;      // 任务唯一标识
-  final String text;    // 任务内容
-  bool isDone;          // 任务是否完成
+  final String id;
+  final String text;
+  bool isDone;
 
   Task({
     required this.id,
     required this.text,
     this.isDone = false,
   });
-
-  /// 复制任务并更新部分属性，用于不可变数据更新
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      id: json['id'] as String,
+      text: json['text'] as String,
+      isDone: json['isDone'] as bool? ?? false,
+    );
+  }
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'text': text,
+      'isDone': isDone,
+    };
+  }
   Task copyWith({bool? isDone}) =>
       Task(id: id, text: text, isDone: isDone ?? this.isDone);
 }
+class FocusSession {
+  final DateTime timestamp;
+  final int durationSeconds;
+
+  FocusSession({required this.timestamp, required this.durationSeconds});
+  factory FocusSession.fromJson(Map<String, dynamic> json) {
+    return FocusSession(
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      durationSeconds: json['durationSeconds'] as int,
+    );
+  }
+  Map<String, dynamic> toJson() {
+    return {
+      'timestamp': timestamp.toIso8601String(),
+      'durationSeconds': durationSeconds,
+    };
+  }
+}
 
 // ════════════════════════════════════════
-// 🧠 状态管理
+// 🧠 状态管理 (State)
 // ════════════════════════════════════════
-/// 番茄钟全局状态管理类，使用 ChangeNotifier 实现状态通知
-/// 管理计时器状态、任务列表、番茄完成数等核心数据
 class PomodoroState extends ChangeNotifier {
-  static const int totalTomatoes = 4;  /// 每轮番茄工作法的番茄总数
+  static const int totalTomatoes = 4;
 
-  Phase _phase      = Phase.focus;      /// 当前计时阶段
-  int _timeLeft     = Phase.focus.durationSeconds; /// 剩余时间（秒）
-  bool _isRunning   = false;            /// 计时器是否正在运行
-  int _completed    = 0;                /// 累计完成的番茄总数
-  bool _justDone    = false;            /// 是否刚刚完成一个番茄（用于触发完成动画）
+  Phase _phase      = Phase.focus;
+  int _timeLeft     = Phase.focus.durationSeconds;
+  bool _isRunning   = false;
+  int _completed    = 0;
+  bool _justDone    = false;
 
-  List<Task> _tasks = [                 /// 任务列表数据
+  List<Task> _tasks = [
     Task(id: '1', text: '整理读书笔记'),
     Task(id: '2', text: '完成项目文档'),
     Task(id: '3', text: '运动 30 分钟'),
   ];
 
-  Timer? _timer;                        /// 计时器实例
+  final List<FocusSession> _history = [];
 
-  // Getters - 对外提供只读的状态访问
-  Phase get phase       => _phase;                /// 获取当前阶段
-  int get timeLeft      => _timeLeft;             /// 获取剩余时间（秒）
-  bool get isRunning    => _isRunning;            /// 获取计时器运行状态
-  int get completed     => _completed % totalTomatoes; /// 获取当前轮已完成番茄数（0-3）
-  int get totalCompleted=> _completed;            /// 获取累计完成番茄总数
-  bool get justDone     => _justDone;             /// 获取是否刚完成番茄
-  List<Task> get tasks  => List.unmodifiable(_tasks); /// 获取只读的任务列表
+  Timer? _timer;
 
-  /// 计时器进度，范围 0.0 ~ 1.0，用于环形进度条显示
+  PomodoroState() {
+    _loadData();
+  }
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? tasksJson = prefs.getString('tasks_data');
+    if (tasksJson != null) {
+      try {
+        final List<dynamic> decodedTasks = json.decode(tasksJson);
+        _tasks = decodedTasks.map((e) => Task.fromJson(e)).toList();
+      } catch (e) {
+        debugPrint('Failed to load tasks: $e');
+      }
+    }
+    final String? historyJson = prefs.getString('history_data');
+    if (historyJson != null) {
+      try {
+        final List<dynamic> decodedHistory = json.decode(historyJson);
+        _history.clear();
+        _history.addAll(decodedHistory.map((e) => FocusSession.fromJson(e)));
+        _completed = _history.length;
+      } catch (e) {
+        debugPrint('Failed to load history: $e');
+      }
+    }
+
+    notifyListeners();
+  }
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String tasksJsonStr = json.encode(_tasks.map((t) => t.toJson()).toList());
+    await prefs.setString('tasks_data', tasksJsonStr);
+    final String historyJsonStr = json.encode(_history.map((h) => h.toJson()).toList());
+    await prefs.setString('history_data', historyJsonStr);
+  }
+  Phase get phase       => _phase;
+  int get timeLeft      => _timeLeft;
+  bool get isRunning    => _isRunning;
+  int get completed     => _completed % totalTomatoes;
+  int get totalCompleted=> _completed;
+  bool get justDone     => _justDone;
+  List<Task> get tasks  => List.unmodifiable(_tasks);
+  List<FocusSession> get history => List.unmodifiable(_history);
+  /// 今日完成的番茄数
+  int get todayCompletedCount {
+    final now = DateTime.now();
+    return _history.where((s) => 
+      s.timestamp.year == now.year && 
+      s.timestamp.month == now.month && 
+      s.timestamp.day == now.day
+    ).length;
+  }
+  /// 本周每天完成的番茄数 (周一到周日)
+  List<int> get weeklyCounts {
+    final now = DateTime.now();
+    final firstDayOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    List<int> counts = List.filled(7, 0);
+
+    for (var session in _history) {
+      final diff = session.timestamp.difference(DateTime(firstDayOfWeek.year, firstDayOfWeek.month, firstDayOfWeek.day));
+      if (diff.inDays >= 0 && diff.inDays < 7) {
+        counts[diff.inDays]++;
+      }
+    }
+    return counts;
+  }
+  /// 总专注时长（分钟）
+  int get totalFocusMinutes {
+    final seconds = _history.fold<int>(0, (sum, s) => sum + s.durationSeconds);
+    return seconds ~/ 60;
+  }
+  /// 各时段分布情况
+  Map<String, int> get timeSlotDistribution {
+    Map<String, int> slots = {
+      '5-9': 0,
+      '9-12': 0,
+      '12-18': 0,
+      '18-21': 0,
+      '21-24': 0,
+    };
+    for (var session in _history) {
+      final hour = session.timestamp.hour;
+      if (hour >= 5 && hour < 9) slots['5-9'] = (slots['5-9'] ?? 0) + 1;
+      else if (hour >= 9 && hour < 12) slots['9-12'] = (slots['9-12'] ?? 0) + 1;
+      else if (hour >= 12 && hour < 18) slots['12-18'] = (slots['12-18'] ?? 0) + 1;
+      else if (hour >= 18 && hour < 21) slots['18-21'] = (slots['18-21'] ?? 0) + 1;
+      else if (hour >= 21 && hour < 24) slots['21-24'] = (slots['21-24'] ?? 0) + 1;
+    }
+    return slots;
+  }
   double get progress =>
       1.0 - (_timeLeft / _phase.durationSeconds);
-
-  /// 格式化的时间字符串，如 "25:00"
   String get timeString {
     final m = (_timeLeft ~/ 60).toString().padLeft(2, '0');
     final s = (_timeLeft % 60).toString().padLeft(2, '0');
     return '$m:$s';
   }
-
-  /// 开始计时
   void start() {
     if (_isRunning) return;
     _isRunning = true;
@@ -114,15 +209,11 @@ class PomodoroState extends ChangeNotifier {
     _timer = Timer.periodic(const Duration(seconds: 1), _tick);
     notifyListeners();
   }
-
-  /// 暂停计时
   void pause() {
     _timer?.cancel();
     _isRunning = false;
     notifyListeners();
   }
-
-  /// 放弃当前计时，重置时间
   void abandon() {
     _timer?.cancel();
     _isRunning = false;
@@ -130,8 +221,6 @@ class PomodoroState extends ChangeNotifier {
     _justDone = false;
     notifyListeners();
   }
-
-  /// 切换计时阶段
   void switchPhase(Phase p) {
     _timer?.cancel();
     _isRunning = false;
@@ -140,8 +229,6 @@ class PomodoroState extends ChangeNotifier {
     _justDone = false;
     notifyListeners();
   }
-
-  /// 计时器每秒回调函数
   void _tick(Timer t) {
     if (_timeLeft <= 1) {
       _timer?.cancel();
@@ -150,6 +237,11 @@ class PomodoroState extends ChangeNotifier {
       if (_phase == Phase.focus) {  // 只有专注阶段完成才计数番茄
         _completed++;
         _justDone = true;
+        _history.add(FocusSession(
+          timestamp: DateTime.now(),
+          durationSeconds: Phase.focus.durationSeconds,
+        ));
+        _saveData(); // 专注完成时同步保存到本地
       }
       notifyListeners();
       return;
@@ -157,40 +249,33 @@ class PomodoroState extends ChangeNotifier {
     _timeLeft--;
     notifyListeners();
   }
-
-  /// 切换任务完成状态
   void toggleTask(String id) {
     _tasks = _tasks.map((t) {
       if (t.id == id) return t.copyWith(isDone: !t.isDone);
       return t;
     }).toList();
     _sortTasks();
+    _saveData();
     notifyListeners();
   }
-
-  /// 添加新任务
   void addTask(String text) {
     if (text.trim().isEmpty) return;
     _tasks = [Task(id: DateTime.now().toString(), text: text), ..._tasks];
     _sortTasks();
+    _saveData();
     notifyListeners();
   }
-
-  /// 任务排序：未完成的任务在前，已完成的在后
   void _sortTasks() {
     _tasks.sort((a, b) {
       if (a.isDone == b.isDone) return 0;
       return a.isDone ? 1 : -1;
     });
   }
-
-  /// 删除指定任务
   void deleteTask(String id) {
     _tasks = _tasks.where((t) => t.id != id).toList();
+    _saveData();
     notifyListeners();
   }
-
-  /// 资源清理：销毁时取消计时器
   @override
   void dispose() {
     _timer?.cancel(); // 必须取消 Timer，否则内存泄漏
@@ -199,12 +284,11 @@ class PomodoroState extends ChangeNotifier {
 }
 
 // ════════════════════════════════════════
-// 🧭 阶段标签栏
+// 🧭 阶段标签栏 (PhaseTabBar)
 // ════════════════════════════════════════
-/// 阶段切换标签栏，在专注/短休/长休三个阶段之间切换
 class PhaseTabBar extends StatelessWidget {
-  final Phase current;                /// 当前选中的阶段
-  final ValueChanged<Phase> onChanged;/// 阶段切换时的回调
+  final Phase current;
+  final ValueChanged<Phase> onChanged;
 
   const PhaseTabBar({
     super.key,
@@ -251,12 +335,11 @@ class PhaseTabBar extends StatelessWidget {
 }
 
 // ════════════════════════════════════════
-// 🍅 番茄进度行
+// 🍅 番茄进度行 (TomatoRow)
 // ════════════════════════════════════════
-/// 番茄进度展示行，显示当前轮已完成的番茄数量
 class TomatoRow extends StatelessWidget {
-  final int total;      /// 总番茄数，默认4个
-  final int completed;  /// 已完成的番茄数
+  final int total;
+  final int completed;
 
   const TomatoRow({
     super.key,
@@ -279,13 +362,12 @@ class TomatoRow extends StatelessWidget {
 }
 
 // ════════════════════════════════════════
-// ⏱️ 像素环形计时器
+// ⏱️ 像素环形计时器 (PixelRingTimer)
 // ════════════════════════════════════════
-/// 像素风格环形进度条，使用 CustomPainter 绘制80个点组成的圆环
 class PixelRingTimer extends StatelessWidget {
-  final double progress; /// 进度 0.0 ~ 1.0
-  final Color color;     /// 进度条颜色
-  final double size;     /// 组件尺寸
+  final double progress;
+  final Color color;
+  final double size;
 
   const PixelRingTimer({
     super.key,
@@ -302,11 +384,9 @@ class PixelRingTimer extends StatelessWidget {
     );
   }
 }
-
-/// 像素环形进度条的绘制实现
 class _PixelRingPainter extends CustomPainter {
-  final double progress; /// 进度 0.0 ~ 1.0
-  final Color color;     /// 进度条颜色
+  final double progress;
+  final Color color;
 
   _PixelRingPainter({required this.progress, required this.color});
 
@@ -357,18 +437,17 @@ class _PixelRingPainter extends CustomPainter {
 }
 
 // ════════════════════════════════════════
-// 🔘 像素按钮
+// 🔘 像素按钮 (PixelButton)
 // ════════════════════════════════════════
-/// 像素风格按钮，带按压动画效果
 class PixelButton extends StatefulWidget {
-  final String label;        /// 按钮文字
-  final VoidCallback onTap;  /// 点击回调
-  final Color fillColor;     /// 填充颜色
-  final Color shadowColor;   /// 阴影颜色
-  final Color textColor;     /// 文字颜色，默认白色
-  final double width;        /// 按钮宽度，默认180
-  final double height;       /// 按钮高度，默认50
-  final TextStyle? textStyle;/// 自定义文字样式
+  final String label;
+  final VoidCallback onTap;
+  final Color fillColor;
+  final Color shadowColor;
+  final Color textColor;
+  final double width;
+  final double height;
+  final TextStyle? textStyle;
 
   const PixelButton({
     super.key,
@@ -385,10 +464,8 @@ class PixelButton extends StatefulWidget {
   @override
   State<PixelButton> createState() => _PixelButtonState();
 }
-
-/// 像素按钮的状态管理，处理按压动画
 class _PixelButtonState extends State<PixelButton> {
-  bool _pressed = false; /// 按钮是否被按下
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -445,14 +522,13 @@ class _PixelButtonState extends State<PixelButton> {
 }
 
 // ════════════════════════════════════════
-// 📝 任务列表
+// 📝 任务列表 (TaskList)
 // ════════════════════════════════════════
-/// 任务列表组件，支持任务的增删改操作
 class TaskList extends StatefulWidget {
-  final List<Task> tasks;               /// 任务列表数据
-  final ValueChanged<String> onToggle;  /// 切换任务完成状态的回调
-  final ValueChanged<String> onDelete;  /// 删除任务的回调
-  final ValueChanged<String> onAdd;     /// 添加新任务的回调
+  final List<Task> tasks;
+  final ValueChanged<String> onToggle;
+  final ValueChanged<String> onDelete;
+  final ValueChanged<String> onAdd;
 
   const TaskList({
     super.key,
@@ -465,12 +541,10 @@ class TaskList extends StatefulWidget {
   @override
   State<TaskList> createState() => _TaskListState();
 }
-
-/// 任务列表的状态管理
 class _TaskListState extends State<TaskList> {
-  bool _isAdding = false;                      /// 是否正在添加新任务
-  final TextEditingController _controller = TextEditingController(); /// 输入框控制器
-  final FocusNode _focusNode = FocusNode();    /// 输入框焦点管理
+  bool _isAdding = false;
+  final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
 
   void _submit() {
     if (_controller.text.isNotEmpty) {
@@ -559,12 +633,10 @@ class _TaskListState extends State<TaskList> {
     super.dispose();
   }
 }
-
-/// 任务列表中的单个任务行
 class _TaskRow extends StatelessWidget {
-  final Task task;              /// 任务数据
-  final VoidCallback onToggle;  /// 切换完成状态的回调
-  final VoidCallback onDelete;  /// 删除任务的回调
+  final Task task;
+  final VoidCallback onToggle;
+  final VoidCallback onDelete;
 
   const _TaskRow({
     required this.task,
@@ -626,21 +698,16 @@ class _TaskRow extends StatelessWidget {
 }
 
 // ════════════════════════════════════════
-// 🏠 主屏幕
+// 🏠 主屏幕 (HomeScreen)
 // ════════════════════════════════════════
-/// 应用主屏幕，包含底部导航栏和三个子页面
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
-
-/// 主屏幕状态管理，处理底部导航切换
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0; /// 当前选中的页面索引
-
-  /// 三个子页面：计时页、统计页、设置页
+  int _selectedIndex = 0;  /// 页面定义：计时、统计、设置
   final List<Widget> _pages = [
     const TimerView(),
     const StatisticsPage(),
@@ -714,8 +781,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
-/// 计时页面，展示番茄钟的核心功能
 class TimerView extends StatelessWidget {
   const TimerView({super.key});
 
@@ -754,8 +819,6 @@ class TimerView extends StatelessWidget {
       },
     );
   }
-
-  /// 构建像素风格的分割线，由间断的点组成
   Widget _buildPixelDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 40),
@@ -773,8 +836,6 @@ class TimerView extends StatelessWidget {
       ),
     );
   }
-
-  /// 构建带时间显示的环形计时器，Stack 叠加环形进度条和时间文字
   Widget _buildRingWithTime(PomodoroState state) {
     final ringColor = state.justDone ? AppColors.tomRed : AppColors.accent;
 
@@ -805,11 +866,6 @@ class TimerView extends StatelessWidget {
       ),
     );
   }
-
-  /// 构建控制按钮区域，根据不同状态显示不同的按钮组合
-  /// - 番茄刚完成：显示完成按钮和提示
-  /// - 计时未开始：显示开始按钮
-  /// - 计时中：显示暂停和放弃按钮
   Widget _buildControls(BuildContext context, PomodoroState state) {
     if (state.justDone) {
       return Column(
@@ -862,21 +918,18 @@ class TimerView extends StatelessWidget {
   }
 }
 // ════════════════════════════════════════
-// 🚀 入口函数
+// 🚀 入口函数 (Main Entry)
 // ════════════════════════════════════════
-/// 应用入口函数
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]); /// 锁定竖屏
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(
     ChangeNotifierProvider(
-      create: (_) => PomodoroState(), /// 全局注入状态管理
+      create: (_) => PomodoroState(),
       child: const TomatoApp(),
     ),
   );
 }
-
-/// 应用根组件
 class TomatoApp extends StatelessWidget {
   const TomatoApp({super.key});
 
