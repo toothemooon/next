@@ -134,7 +134,7 @@ class StatisticsPage extends StatelessWidget {
             BarChartData(
               alignment: BarChartAlignment.spaceAround,
               maxY: maxCount,
-              barTouchData: BarTouchData(enabled: false),
+              barTouchData: const BarTouchData(enabled: false),
               titlesData: FlTitlesData(
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(

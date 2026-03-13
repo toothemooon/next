@@ -30,10 +30,6 @@ class SettingsPage extends StatelessWidget {
                     children: [
                       _buildTimerSettings(state),
                       const SizedBox(height: 24),
-                      _buildBreakSettings(state),
-                      const SizedBox(height: 24),
-                      _buildNotificationSettings(state),
-                      const SizedBox(height: 24),
                       _buildToggleSettings(state),
                       const SizedBox(height: 24),
                       _buildThemeSelector(state),
@@ -63,7 +59,7 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // 构建计时器设置
+  // 构建计时器设置（含长休息间隔）
   Widget _buildTimerSettings(PomodoroState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,6 +90,12 @@ class SettingsPage extends StatelessWidget {
                 '长休息', 
                 state.longBreakDuration,
                 (v) => state.updateLongBreakDuration(v)
+              ),
+              Divider(height: 1, color: AppColors.pixelGrid),
+              _buildCounterRow(
+                '长休息间隔',
+                state.longBreakInterval,
+                (v) => state.updateLongBreakInterval(v),
               ),
             ],
           ),
@@ -148,72 +150,6 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // 构建休息设置
-  Widget _buildBreakSettings(PomodoroState state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('// 休息提醒', style: AppTextStyles.sectionLabel),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.accent.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.accent.withOpacity(0.3)),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.notifications_active, color: AppColors.accent, size: 20),
-              const SizedBox(width: 8),
-              Expanded(child: Text('每完成${state.longBreakInterval}个番茄钟后长休息', style: TextStyle(fontSize: 14, color: AppColors.textPrimary))),
-              Row(
-                children: [
-                  _buildCounterButton('-', () => state.updateLongBreakInterval(state.longBreakInterval - 1)),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text('${state.longBreakInterval}', style: const TextStyle(color: Colors.white, fontSize: 12)),
-                  ),
-                  _buildCounterButton('+', () => state.updateLongBreakInterval(state.longBreakInterval + 1)),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 构建通知设置
-  Widget _buildNotificationSettings(PomodoroState state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('// 通知', style: AppTextStyles.sectionLabel),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            children: [
-              _buildSwitchRow('声音提醒', state.soundEnabled, state.toggleSound),
-              Divider(height: 1, color: AppColors.pixelGrid),
-              _buildSwitchRow('震动', state.vibrationEnabled, state.toggleVibration),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   // 构建开关行
   Widget _buildSwitchRow(String label, bool value, ValueChanged<bool> onChanged) {
     return Padding(
@@ -226,7 +162,7 @@ class SettingsPage extends StatelessWidget {
             child: Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: AppColors.accent,
+              activeThumbColor: AppColors.accent,
               activeTrackColor: AppColors.accent.withOpacity(0.3),
             ),
           ),
@@ -250,11 +186,9 @@ class SettingsPage extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _buildSwitchRow('自动开始休息', state.autoStartBreak, state.toggleAutoStartBreak),
+              _buildSwitchRow('自动进入下一阶段', state.autoStartNext, state.toggleAutoStartNext),
               Divider(height: 1, color: AppColors.pixelGrid),
-              _buildSwitchRow('自动开始专注', state.autoStartFocus, state.toggleAutoStartFocus),
-              Divider(height: 1, color: AppColors.pixelGrid),
-              _buildSwitchRow('显示通知计数', state.showNotifications, state.toggleShowNotifications),
+              _buildSwitchRow('震动', state.vibrationEnabled, state.toggleVibration),
               Divider(height: 1, color: AppColors.pixelGrid),
               _buildSwitchRow('锁定任务', state.lockTask, state.toggleLockTask),
             ],
@@ -262,6 +196,7 @@ class SettingsPage extends StatelessWidget {
         ),
       ],
     );
+
   }
 
   // 构建主题选择
@@ -332,7 +267,7 @@ class SettingsPage extends StatelessWidget {
             child: Switch(
               value: false,
               onChanged: (val) {},
-              activeColor: AppColors.accent,
+              activeThumbColor: AppColors.accent,
             ),
           ),
         ],
@@ -346,10 +281,5 @@ class SettingsPage extends StatelessWidget {
       border: Border.all(color: AppColors.accent.withOpacity(0.3), width: 1),
       borderRadius: BorderRadius.circular(8),
     );
-  }
-
-  // 辅助方法：获取代码风格文本样式
-  TextStyle _getCodeStyle() {
-    return AppTextStyles.sectionLabel;
   }
 }

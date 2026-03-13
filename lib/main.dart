@@ -1,4 +1,5 @@
 /// Pixel Zen Pomodoro
+library;
 import 'dart:convert';
 import 'dart:async';
 import 'dart:math';
@@ -10,6 +11,7 @@ import 'constants.dart';
 import 'widgets/pixel_tomato.dart';
 import 'widgets/settings_page.dart';
 import 'widgets/statistics_page.dart';
+import 'notification_service.dart';
 
 // ════════════════════════════════════════
 // 🔄 阶段枚举 (Phase)
@@ -86,7 +88,7 @@ class FocusSession {
 // ════════════════════════════════════════
 // 🧠 状态管理 (State)
 // ════════════════════════════════════════
-class PomodoroState extends ChangeNotifier {
+class PomodoroState extends ChangeNotifier with WidgetsBindingObserver {
   static const int totalTomatoes = 4;
 
   Phase _phase      = Phase.focus;
@@ -104,6 +106,7 @@ class PomodoroState extends ChangeNotifier {
   final List<FocusSession> _history = [];
 
   Timer? _timer;
+  DateTime? _endTime; // 计时结束的绝对时间，用于后台恢复
 
   // Settings
   int _focusDuration = 25 * 60;
@@ -120,6 +123,7 @@ class PomodoroState extends ChangeNotifier {
 
   PomodoroState() {
     _loadData();
+    WidgetsBinding.instance.addObserver(this);
   }
   
   int _getPhaseDuration(Phase p) {
@@ -217,6 +221,7 @@ class PomodoroState extends ChangeNotifier {
   bool get vibrationEnabled => _vibrationEnabled;
   bool get autoStartBreak => _autoStartBreak;
   bool get autoStartFocus => _autoStartFocus;
+  bool get autoStartNext => _autoStartBreak && _autoStartFocus;
   bool get showNotifications => _showNotifications;
   bool get lockTask => _lockTask;
   int get themeIndex => _themeIndex;
@@ -253,6 +258,12 @@ class PomodoroState extends ChangeNotifier {
   void toggleVibration(bool value) { _vibrationEnabled = value; _saveSettings(); notifyListeners(); }
   void toggleAutoStartBreak(bool value) { _autoStartBreak = value; _saveSettings(); notifyListeners(); }
   void toggleAutoStartFocus(bool value) { _autoStartFocus = value; _saveSettings(); notifyListeners(); }
+  void toggleAutoStartNext(bool value) {
+    _autoStartBreak = value;
+    _autoStartFocus = value;
+    _saveSettings();
+    notifyListeners();
+  }
   void toggleShowNotifications(bool value) { _showNotifications = value; _saveSettings(); notifyListeners(); }
   void toggleLockTask(bool value) { _lockTask = value; _saveSettings(); notifyListeners(); }
   void setThemeIndex(int index) { 
@@ -300,8 +311,9 @@ class PomodoroState extends ChangeNotifier {
     };
     for (var session in _history) {
       final hour = session.timestamp.hour;
-      if (hour >= 5 && hour < 9) slots['5-9'] = (slots['5-9'] ?? 0) + 1;
-      else if (hour >= 9 && hour < 12) slots['9-12'] = (slots['9-12'] ?? 0) + 1;
+      if (hour >= 5 && hour < 9) {
+        slots['5-9'] = (slots['5-9'] ?? 0) + 1;
+      } else if (hour >= 9 && hour < 12) slots['9-12'] = (slots['9-12'] ?? 0) + 1;
       else if (hour >= 12 && hour < 18) slots['12-18'] = (slots['12-18'] ?? 0) + 1;
       else if (hour >= 18 && hour < 21) slots['18-21'] = (slots['18-21'] ?? 0) + 1;
       else if (hour >= 21 && hour < 24) slots['21-24'] = (slots['21-24'] ?? 0) + 1;
@@ -319,12 +331,26 @@ class PomodoroState extends ChangeNotifier {
     if (_isRunning) return;
     _isRunning = true;
     _justDone = false;
+    
+    // 记录绝对结束时间
+    _endTime = DateTime.now().add(Duration(seconds: _timeLeft));
+    
+    // 发送本地通知调度
+    NotificationService().scheduleNotification(
+      id: 0,
+      title: '专注结束',
+      body: _phase == Phase.focus ? '你完成了一个番茄钟！' : '休息结束，该开始专注了。',
+      scheduledDate: _endTime!,
+    );
+
     _timer = Timer.periodic(const Duration(seconds: 1), _tick);
     notifyListeners();
   }
   void pause() {
     _timer?.cancel();
     _isRunning = false;
+    _endTime = null;
+    NotificationService().cancelAll();
     notifyListeners();
   }
   void abandon() {
@@ -332,6 +358,8 @@ class PomodoroState extends ChangeNotifier {
     _isRunning = false;
     _timeLeft = _getPhaseDuration(_phase);
     _justDone = false;
+    _endTime = null;
+    NotificationService().cancelAll();
     notifyListeners();
   }
   void switchPhase(Phase p) {
@@ -340,6 +368,8 @@ class PomodoroState extends ChangeNotifier {
     _phase = p;
     _timeLeft = _getPhaseDuration(p);
     _justDone = false;
+    _endTime = null;
+    NotificationService().cancelAll();
     notifyListeners();
   }
   void _tick(Timer t) {
@@ -389,9 +419,29 @@ class PomodoroState extends ChangeNotifier {
     _saveData();
     notifyListeners();
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isRunning && _endTime != null) {
+      final now = DateTime.now();
+      final diff = _endTime!.difference(now).inSeconds;
+      
+      if (diff <= 0) {
+        // 已经在后台结束了
+        _timeLeft = 0;
+        _tick(Timer(Duration.zero, () {})); // 手动触发一次 tick 处理完成逻辑
+      } else {
+        // 更新剩余时间
+        _timeLeft = diff;
+        notifyListeners();
+      }
+    }
+  }
+
   @override
   void dispose() {
-    _timer?.cancel(); // 必须取消 Timer，否则内存泄漏
+    WidgetsBinding.instance.removeObserver(this);
+    _timer?.cancel();
     super.dispose();
   }
 }
@@ -1032,8 +1082,12 @@ class TimerView extends StatelessWidget {
 // ════════════════════════════════════════
 // 🚀 入口函数 (Main Entry)
 // ════════════════════════════════════════
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Notification Service
+  await NotificationService().init();
+
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(
     ChangeNotifierProvider(

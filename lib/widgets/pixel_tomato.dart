@@ -53,18 +53,32 @@ class _TomatoPainter extends CustomPainter {
     dot(3,2,leafColor); dot(4,2,leafColor); dot(5,2,leafColor);
 
     // Body
-    for (final gx in [2,3,4,5,6]) dot(gx,3,bodyColor);
+    for (final gx in [2,3,4,5,6]) {
+      dot(gx,3,bodyColor);
+    }
     dot(1,3,shadowColor); dot(7,3,shadowColor);
-    for (int gx=1; gx<=7; gx++) dot(gx,4,bodyColor);
+    for (int gx=1; gx<=7; gx++) {
+      dot(gx,4,bodyColor);
+    }
     dot(0,4,shadowColor); dot(8,4,shadowColor);
-    for (int gx=0; gx<=8; gx++) dot(gx,5,bodyColor);
-    for (int gx=0; gx<=8; gx++) dot(gx,6,bodyColor);
+    for (int gx=0; gx<=8; gx++) {
+      dot(gx,5,bodyColor);
+    }
+    for (int gx=0; gx<=8; gx++) {
+      dot(gx,6,bodyColor);
+    }
     dot(0,6,shadowColor); dot(8,6,shadowColor);
-    for (int gx=1; gx<=7; gx++) dot(gx,7,bodyColor);
+    for (int gx=1; gx<=7; gx++) {
+      dot(gx,7,bodyColor);
+    }
     dot(1,7,shadowColor); dot(7,7,shadowColor);
-    for (final gx in [2,3,4,5,6]) dot(gx,8,bodyColor);
+    for (final gx in [2,3,4,5,6]) {
+      dot(gx,8,bodyColor);
+    }
     dot(2,8,shadowColor); dot(6,8,shadowColor);
-    for (final gx in [3,4,5]) dot(gx,9,shadowColor);
+    for (final gx in [3,4,5]) {
+      dot(gx,9,shadowColor);
+    }
 
     // Highlight
     if (filled) {
