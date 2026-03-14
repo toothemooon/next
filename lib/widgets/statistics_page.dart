@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tomato_app/generated/l10n/app_localizations.dart';
 import '../main.dart';
 import '../constants.dart';
 import 'pixel_tomato.dart';
@@ -21,22 +22,22 @@ class StatisticsPage extends StatelessWidget {
           color: AppColors.bg, // 背景颜色
           child: Column(
             children: [
-              _buildHeader(),
+              _buildHeader(context),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildStatsCards(state),
+                      _buildStatsCards(context, state),
                       const SizedBox(height: 24),
-                      _buildChartSection(state),
+                      _buildChartSection(context, state),
                       const SizedBox(height: 24),
-                      _buildTomatoSection(state),
+                      _buildTomatoSection(context, state),
                       const SizedBox(height: 24),
-                      _buildTimeSlots(state),
+                      _buildTimeSlots(context, state),
                       const SizedBox(height: 24),
-                      _buildDetailedStats(state),
+                      _buildDetailedStats(context, state),
                     ],
                   ),
                 ),
@@ -49,13 +50,14 @@ class StatisticsPage extends StatelessWidget {
   }
 
   // 顶部Header
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 44, 16, 16),
       child: Row(
         children: [
           // 标题显示为“// 统计”，使用等宽字体样式与设置页保持统一视觉风格
-          Text('// 统计', style: AppTextStyles.sectionLabel),
+          Text('// ${l10n.navStats}', style: AppTextStyles.sectionLabel),
           const Spacer(),
           _buildPeriodSelector(),
         ],
@@ -64,7 +66,8 @@ class StatisticsPage extends StatelessWidget {
   }
 
   // 三个统计卡片
-  Widget _buildStatsCards(PomodoroState state) {
+  Widget _buildStatsCards(BuildContext context, PomodoroState state) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: _buildDashedBorder(),
       padding: const EdgeInsets.all(16),
@@ -72,11 +75,11 @@ class StatisticsPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           // 左中右三列分别展示不同的关键指标（数值、单位、变动标识）
-          _buildStatItem('${state.todayCompletedCount}', '完成', '', true),
+          _buildStatItem('${state.todayCompletedCount}', l10n.finishedBtn, '', true),
           _buildVerticalDivider(),
-          _buildStatItem('${state.totalFocusMinutes}', '分钟', '', true),
+          _buildStatItem('${state.totalFocusMinutes}', l10n.statsTotalMinutes, '', true),
           _buildVerticalDivider(),
-          _buildStatItem('${state.totalCompleted}', '总番茄数', '', true),
+          _buildStatItem('${state.totalCompleted}', l10n.statsTotalCompleted, '', true),
         ],
       ),
     );
@@ -113,7 +116,8 @@ class StatisticsPage extends StatelessWidget {
   }
 
   // 图表区域
-  Widget _buildChartSection(PomodoroState state) {
+  Widget _buildChartSection(BuildContext context, PomodoroState state) {
+    final l10n = AppLocalizations.of(context)!;
     final weeklyData = state.weeklyCounts;
     final double maxCount = weeklyData.isEmpty ? 8 : (weeklyData.reduce(max) + 2).toDouble();
 
@@ -121,7 +125,7 @@ class StatisticsPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 本周趋势：柱状图展示一周每天的番茄计数
-        Text('// 本周趋势', style: _getCodeStyle()),
+        Text(l10n.statsWeeklyTrend, style: _getCodeStyle()),
         const SizedBox(height: 12),
         Container(
           height: 160,
@@ -153,13 +157,13 @@ class StatisticsPage extends StatelessWidget {
                     getTitlesWidget: (value, meta) {
                       String text;
                       switch (value.toInt()) {
-                        case 0: text = '一'; break;
-                        case 1: text = '二'; break;
-                        case 2: text = '三'; break;
-                        case 3: text = '四'; break;
-                        case 4: text = '五'; break;
-                        case 5: text = '六'; break;
-                        case 6: text = '日'; break;
+                        case 0: text = l10n.mon; break;
+                        case 1: text = l10n.tue; break;
+                        case 2: text = l10n.wed; break;
+                        case 3: text = l10n.thu; break;
+                        case 4: text = l10n.fri; break;
+                        case 5: text = l10n.sat; break;
+                        case 6: text = l10n.sun; break;
                         default: text = '';
                       }
                       return Padding(
@@ -197,7 +201,8 @@ class StatisticsPage extends StatelessWidget {
   }
 
   // 番茄区域
-  Widget _buildTomatoSection(PomodoroState state) {
+  Widget _buildTomatoSection(BuildContext context, PomodoroState state) {
+    final l10n = AppLocalizations.of(context)!;
     int target = state.longBreakInterval;
     int current = state.completed;
 
@@ -211,7 +216,7 @@ class StatisticsPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 今日番茄：用多个 `PixelTomato` 表示今日已完成/目标状态
-                Text('// $target连击进度', style: _getCodeStyle()),
+                Text(l10n.statsComboProgress(target), style: _getCodeStyle()),
                 const SizedBox(height: 12),
                 Row(
                   children: List.generate(
@@ -226,7 +231,7 @@ class StatisticsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text('$current / $target 距离长休息', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                Text(l10n.statsUntilLongBreak(current, target), style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
           ),
@@ -245,14 +250,15 @@ class StatisticsPage extends StatelessWidget {
   }
 
   // 时间段选择
-  Widget _buildTimeSlots(PomodoroState state) {
+  Widget _buildTimeSlots(BuildContext context, PomodoroState state) {
+    final l10n = AppLocalizations.of(context)!;
     final dist = state.timeSlotDistribution;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 时间段分布：展示一天内按时段的专注次数，颜色表示是否为活跃时段
-        Text('// 时间段分布', style: _getCodeStyle()),
+        Text(l10n.statsTimeDistribution, style: _getCodeStyle()),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -291,7 +297,8 @@ class StatisticsPage extends StatelessWidget {
   }
 
   // 详细统计
-  Widget _buildDetailedStats(PomodoroState state) {
+  Widget _buildDetailedStats(BuildContext context, PomodoroState state) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _buildDashedBorder(),
@@ -299,13 +306,13 @@ class StatisticsPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 详情区：列出若干关键统计项的标签与数值
-          Text('// 详情', style: _getCodeStyle()),
+          Text(l10n.statsDetails, style: _getCodeStyle()),
           const SizedBox(height: 12),
-          _buildStatRow('总专注番茄数', '${state.totalCompleted} 个'),
+          _buildStatRow(l10n.statsTotalCompleted, l10n.statsCountUnit(state.totalCompleted)),
           const SizedBox(height: 8),
-          _buildStatRow('总计专注时长', '${state.totalFocusMinutes} 分钟'),
+          _buildStatRow(l10n.statsTotalMinutes, l10n.statsMinuteUnit(state.totalFocusMinutes)),
           const SizedBox(height: 8),
-          _buildStatRow('平均时段效率', '${state.timeSlotDistribution.values.where((v) => v > 0).length} / 5 时段'),
+          _buildStatRow(l10n.statsAverageEfficiency, l10n.statsPeriodUnit(state.timeSlotDistribution.values.where((v) => v > 0).length)),
         ],
       ),
     );

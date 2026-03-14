@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:tomato_app/generated/l10n/app_localizations.dart';
 import 'constants.dart';
 import 'widgets/pixel_tomato.dart';
 import 'widgets/settings_page.dart';
@@ -20,11 +23,12 @@ enum Phase {
   focus,
   shortBreak,
   longBreak;
-  String get label {
+  String label(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     switch (this) {
-      case Phase.focus:      return '专注';
-      case Phase.shortBreak: return '短休';
-      case Phase.longBreak:  return '长休';
+      case Phase.focus:      return l10n.phaseFocus;
+      case Phase.shortBreak: return l10n.phaseShortBreak;
+      case Phase.longBreak:  return l10n.phaseLongBreak;
     }
   }
   int get durationSeconds {
@@ -32,6 +36,21 @@ enum Phase {
       case Phase.focus:      return 25 * 60;
       case Phase.shortBreak: return 5 * 60;
       case Phase.longBreak:  return 15 * 60;
+    }
+  }
+}
+
+// ========== 主题模式枚举 ==========
+enum AppThemeMode {
+  system,
+  light,
+  dark;
+  String label(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (this) {
+      case AppThemeMode.system: return l10n.themeSystem;
+      case AppThemeMode.light:  return l10n.themeLight;
+      case AppThemeMode.dark:   return l10n.themeDark;
     }
   }
 }
@@ -120,6 +139,9 @@ class PomodoroState extends ChangeNotifier with WidgetsBindingObserver {
   bool _showNotifications = false;
   bool _lockTask = false;
   int _themeIndex = 0;
+  AppThemeMode _appThemeMode = AppThemeMode.system;
+  bool _notificationPermissionGranted = false;
+  Locale? _locale;
 
   PomodoroState() {
     _loadData();
@@ -149,9 +171,17 @@ class PomodoroState extends ChangeNotifier with WidgetsBindingObserver {
     _showNotifications = prefs.getBool('show_notifications') ?? false;
     _lockTask = prefs.getBool('lock_task') ?? true;
     _themeIndex = prefs.getInt('theme_index') ?? 0;
+    _appThemeMode = AppThemeMode.values[prefs.getInt('app_theme_mode') ?? 0];
+    final localeCode = prefs.getString('app_locale');
+    if (localeCode != null) {
+      _locale = Locale(localeCode);
+    }
     
-    // Initialize global theme
-    AppColors.setTheme(_themeIndex);
+    // Check notification permission
+    _notificationPermissionGranted = await Permission.notification.isGranted;
+    
+    // Initialize global theme with dark mode awareness
+    AppColors.setTheme(_themeIndex, isDark: _isCurrentlyDark);
 
     // Adjust timeLeft based on loaded settings if not running
     if (!_isRunning) {
@@ -202,6 +232,12 @@ class PomodoroState extends ChangeNotifier with WidgetsBindingObserver {
     await prefs.setBool('show_notifications', _showNotifications);
     await prefs.setBool('lock_task', _lockTask);
     await prefs.setInt('theme_index', _themeIndex);
+    await prefs.setInt('app_theme_mode', _appThemeMode.index);
+    if (_locale != null) {
+      await prefs.setString('app_locale', _locale!.languageCode);
+    } else {
+      await prefs.remove('app_locale');
+    }
   }
   Phase get phase       => _phase;
   int get timeLeft      => _timeLeft;
@@ -225,6 +261,9 @@ class PomodoroState extends ChangeNotifier with WidgetsBindingObserver {
   bool get showNotifications => _showNotifications;
   bool get lockTask => _lockTask;
   int get themeIndex => _themeIndex;
+  AppThemeMode get appThemeMode => _appThemeMode;
+  bool get notificationPermissionGranted => _notificationPermissionGranted;
+  Locale? get locale => _locale;
 
   // Settings Setters
   void updateFocusDuration(int minutes) {
@@ -268,9 +307,45 @@ class PomodoroState extends ChangeNotifier with WidgetsBindingObserver {
   void toggleLockTask(bool value) { _lockTask = value; _saveSettings(); notifyListeners(); }
   void setThemeIndex(int index) { 
     _themeIndex = index; 
-    AppColors.setTheme(index);
+    AppColors.setTheme(index, isDark: _isCurrentlyDark);
     _saveSettings(); 
     notifyListeners(); 
+  }
+  void setAppThemeMode(AppThemeMode mode) {
+    _appThemeMode = mode;
+    AppColors.setTheme(_themeIndex, isDark: _isCurrentlyDark);
+    _saveSettings();
+    notifyListeners();
+  }
+  void setLocale(Locale? locale) {
+    _locale = locale;
+    _saveSettings();
+    notifyListeners();
+  }
+
+  bool get _isCurrentlyDark {
+    if (_appThemeMode == AppThemeMode.dark) return true;
+    if (_appThemeMode == AppThemeMode.light) return false;
+    return WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    if (_appThemeMode == AppThemeMode.system) {
+      AppColors.setTheme(_themeIndex, isDark: _isCurrentlyDark);
+      notifyListeners();
+    }
+  }
+
+  Future<void> requestNotificationPermission() async {
+    final status = await Permission.notification.status;
+    if (status.isPermanentlyDenied) {
+      openAppSettings();
+    } else {
+      final result = await Permission.notification.request();
+      _notificationPermissionGranted = result.isGranted;
+      notifyListeners();
+    }
   }
   /// 今日完成的番茄数
   int get todayCompletedCount {
@@ -327,10 +402,12 @@ class PomodoroState extends ChangeNotifier with WidgetsBindingObserver {
     final s = (_timeLeft % 60).toString().padLeft(2, '0');
     return '$m:$s';
   }
-  void start() {
+  void start(BuildContext context) {
     if (_isRunning) return;
     _isRunning = true;
     _justDone = false;
+    
+    final l10n = AppLocalizations.of(context)!;
     
     // 记录绝对结束时间
     _endTime = DateTime.now().add(Duration(seconds: _timeLeft));
@@ -338,8 +415,8 @@ class PomodoroState extends ChangeNotifier with WidgetsBindingObserver {
     // 发送本地通知调度
     NotificationService().scheduleNotification(
       id: 0,
-      title: '专注结束',
-      body: _phase == Phase.focus ? '你完成了一个番茄钟！' : '休息结束，该开始专注了。',
+      title: l10n.notificationTitle,
+      body: _phase == Phase.focus ? l10n.notificationBodyFocus : l10n.notificationBodyBreak,
       scheduledDate: _endTime!,
     );
 
@@ -484,7 +561,7 @@ class PhaseTabBar extends StatelessWidget {
                     : null,
               ),
               child: Text(
-                p.label,
+                p.label(context),
                 style: isActive
                     ? AppTextStyles.tabActive
                     : AppTextStyles.tabInactive,
@@ -719,6 +796,7 @@ class _TaskListState extends State<TaskList> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(12),
@@ -729,7 +807,7 @@ class _TaskListState extends State<TaskList> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('// 今日任务', style: AppTextStyles.sectionLabel),
+          Text(l10n.todayTasks, style: AppTextStyles.sectionLabel),
           const SizedBox(height: 8),
           ...widget.tasks.map((t) => _TaskRow(
                 task: t,
@@ -744,6 +822,7 @@ class _TaskListState extends State<TaskList> {
   }
 
   Widget _buildAddRow() {
+    final l10n = AppLocalizations.of(context)!;
     if (_isAdding) {
       return Row(
         children: [
@@ -758,7 +837,7 @@ class _TaskListState extends State<TaskList> {
               decoration: InputDecoration(
                 isDense: true,
                 border: InputBorder.none,
-                hintText: '输入任务...',
+                hintText: l10n.inputTask,
                 hintStyle: TextStyle(fontSize: 14, color: AppColors.textSecondary),
               ),
             ),
@@ -781,7 +860,7 @@ class _TaskListState extends State<TaskList> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Text(
-          '＋ 添加任务...',
+          l10n.addTask,
           style: AppTextStyles.taskItem.copyWith(color: AppColors.textSecondary),
         ),
       ),
@@ -900,10 +979,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNavBar() {
+    final l10n = AppLocalizations.of(context)!;
     final items = [
-      (Icons.timer_outlined, '计时'),
-      (Icons.bar_chart, '统计'),
-      (Icons.settings_outlined, '设置'),
+      (Icons.timer_outlined, l10n.navTimer),
+      (Icons.bar_chart, l10n.navStats),
+      (Icons.settings_outlined, l10n.navSettings),
     ];
     return Container(
       height: 64,
@@ -966,7 +1046,7 @@ class TimerView extends StatelessWidget {
             Text('${state.completed} / 4', style: AppTextStyles.count),
             _buildPixelDivider(),
             const SizedBox(height: 8),
-            _buildRingWithTime(state),
+            _buildRingWithTime(context, state),
             _buildPixelDivider(),
             const SizedBox(height: 12),
             _buildControls(context, state),
@@ -1001,7 +1081,7 @@ class TimerView extends StatelessWidget {
       ),
     );
   }
-  Widget _buildRingWithTime(PomodoroState state) {
+  Widget _buildRingWithTime(BuildContext context, PomodoroState state) {
     final ringColor = state.justDone ? AppColors.tomRed : AppColors.accent;
 
     return SizedBox(
@@ -1019,7 +1099,7 @@ class TimerView extends StatelessWidget {
             children: [
               Text(state.timeString, style: AppTextStyles.time),
               Text(
-                state.phase.label,
+                state.phase.label(context),
                 style: AppTextStyles.label.copyWith(
                   color: ringColor,
                   letterSpacing: 2,
@@ -1032,26 +1112,27 @@ class TimerView extends StatelessWidget {
     );
   }
   Widget _buildControls(BuildContext context, PomodoroState state) {
+    final l10n = AppLocalizations.of(context)!;
     if (state.justDone) {
       return Column(
         children: [
           PixelButton(
-            label: '✓  完成！',
+            label: '✓  ${l10n.finishedBtn}',
             onTap: () => state.switchPhase(state.phase),
             fillColor: AppColors.tomRed,
             shadowColor: AppColors.tomRedD,
             width: 180,
           ),
           const SizedBox(height: 8),
-          Text('已完成第 ${state.totalCompleted} 个番茄', style: AppTextStyles.label),
+          Text(l10n.completedTomatoes(state.totalCompleted), style: AppTextStyles.label),
         ],
       );
     }
 
     if (!state.isRunning) {
       return PixelButton(
-        label: '▶  开始专注',
-        onTap: state.start,
+        label: '▶  ${l10n.startFocus}',
+        onTap: () => state.start(context),
         fillColor: AppColors.accent,
         shadowColor: AppColors.accentD,
         width: 180,
@@ -1061,7 +1142,7 @@ class TimerView extends StatelessWidget {
     return Column(
       children: [
         PixelButton(
-          label: '⏸  暂停',
+          label: '⏸  ${l10n.pause}',
           onTap: state.pause,
           fillColor: AppColors.accent,
           shadowColor: AppColors.accentD,
@@ -1069,7 +1150,7 @@ class TimerView extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         PixelButton(
-          label: '打断 / 废弃',
+          label: l10n.abandon,
           onTap: state.abandon,
           fillColor: AppColors.track,
           shadowColor: AppColors.tomEmptyD,
@@ -1106,11 +1187,35 @@ class TomatoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<PomodoroState>(
       builder: (context, state, child) {
+        // 将自定义 AppThemeMode 转换为 Flutter 原生 ThemeMode
+        ThemeMode themeMode;
+        switch (state.appThemeMode) {
+          case AppThemeMode.system: themeMode = ThemeMode.system; break;
+          case AppThemeMode.light:  themeMode = ThemeMode.light;  break;
+          case AppThemeMode.dark:   themeMode = ThemeMode.dark;   break;
+        }
+
         return MaterialApp(
-          title: 'Tomato',
+          onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
           debugShowCheckedModeBanner: false,
+          themeMode: themeMode,
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: state.locale,
           theme: ThemeData(
+            brightness: Brightness.light,
             scaffoldBackgroundColor: AppColors.bg,
+            fontFamily: 'SF Pro Text',
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: AppColors.bg, // 此时 AppColors.bg 已被 PomodoroState 更新为深色
             fontFamily: 'SF Pro Text',
             useMaterial3: true,
           ),

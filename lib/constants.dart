@@ -43,50 +43,95 @@ class AppColors {
   static Color secondary = const Color(0xFFB87858); /// 次要强调色（棕色系）
 
   /// 切换主题色系
-  static void setTheme(int index) {
+  static void setTheme(int index, {bool isDark = false}) {
     switch (index) {
       case 1: // 深蓝 (Deep Blue)
-        bg            = const Color(0xFFE8EBF2);
-        bg2           = const Color(0xFFDDE2ED);
-        pixelGrid     = const Color(0xFFD2D8E5);
-        card          = const Color(0xFFE2E6EF);
-        navBg         = const Color(0xFFDFE4ED);
-        track         = const Color(0xFFCED4E0);
-        textPrimary   = const Color(0xFF222831);
-        textSecondary = const Color(0xFF7E8A9A);
-        accent        = const Color(0xFF5A7A9E);
-        accentD       = const Color(0xFF3E5A7A);
-        accentL       = const Color(0xFF86A2C4);
-        secondary     = const Color(0xFF5878B8);
+        if (isDark) {
+          bg            = const Color(0xFF1A1C22);
+          bg2           = const Color(0xFF242830);
+          pixelGrid     = const Color(0xFF2D333D);
+          card          = const Color(0xFF22262F);
+          navBg         = const Color(0xFF1E222A);
+          track         = const Color(0xFF3D4452);
+          textPrimary   = const Color(0xFFE0E6ED);
+          textSecondary = const Color(0xFF8E9AAF);
+          accent        = const Color(0xFF668BB2);
+          accentD       = const Color(0xFF4A6D8C);
+          accentL       = const Color(0xFF8BAAC4);
+          secondary     = const Color(0xFF6B8ECC);
+        } else {
+          bg            = const Color(0xFFE8EBF2);
+          bg2           = const Color(0xFFDDE2ED);
+          pixelGrid     = const Color(0xFFD2D8E5);
+          card          = const Color(0xFFE2E6EF);
+          navBg         = const Color(0xFFDFE4ED);
+          track         = const Color(0xFFCED4E0);
+          textPrimary   = const Color(0xFF222831);
+          textSecondary = const Color(0xFF7E8A9A);
+          accent        = const Color(0xFF5A7A9E);
+          accentD       = const Color(0xFF3E5A7A);
+          accentL       = const Color(0xFF86A2C4);
+          secondary     = const Color(0xFF5878B8);
+        }
         break;
       case 2: // 青色 (Teal)
-        bg            = const Color(0xFFE2EFF2);
-        bg2           = const Color(0xFFD4E8E8);
-        pixelGrid     = const Color(0xFFCADEDD);
-        card          = const Color(0xFFDAECE8);
-        navBg         = const Color(0xFFD8EAE6);
-        track         = const Color(0xFFC4D8D4);
-        textPrimary   = const Color(0xFF222A2A);
-        textSecondary = const Color(0xFF7E9A92);
-        accent        = const Color(0xFF5A9E9F);
-        accentD       = const Color(0xFF3E7A7A);
-        accentL       = const Color(0xFF86C4C2);
-        secondary     = const Color(0xFF58B8B0);
+        if (isDark) {
+          bg            = const Color(0xFF1A2222);
+          bg2           = const Color(0xFF243030);
+          pixelGrid     = const Color(0xFF2D3D3D);
+          card          = const Color(0xFF222F2F);
+          navBg         = const Color(0xFF1E2A2A);
+          track         = const Color(0xFF3D5252);
+          textPrimary   = const Color(0xFFE0EDED);
+          textSecondary = const Color(0xFF8EAFAC);
+          accent        = const Color(0xFF66B2B3);
+          accentD       = const Color(0xFF4A8C8D);
+          accentL       = const Color(0xFF8BC4C2);
+          secondary     = const Color(0xFF6BCCCC);
+        } else {
+          bg            = const Color(0xFFE2EFF2);
+          bg2           = const Color(0xFFD4E8E8);
+          pixelGrid     = const Color(0xFFCADEDD);
+          card          = const Color(0xFFDAECE8);
+          navBg         = const Color(0xFFD8EAE6);
+          track         = const Color(0xFFC4D8D4);
+          textPrimary   = const Color(0xFF222A2A);
+          textSecondary = const Color(0xFF7E9A92);
+          accent        = const Color(0xFF5A9E9F);
+          accentD       = const Color(0xFF3E7A7A);
+          accentL       = const Color(0xFF86C4C2);
+          secondary     = const Color(0xFF58B8B0);
+        }
         break;
       case 0: // 默认绿 (Classic Green)
       default:
-        bg            = const Color(0xFFF2EFE2);
-        bg2           = const Color(0xFFE8E4D4);
-        pixelGrid     = const Color(0xFFDEDACA);
-        card          = const Color(0xFFECE8DA);
-        navBg         = const Color(0xFFEAE6D8);
-        track         = const Color(0xFFD8D4C4);
-        textPrimary   = const Color(0xFF2A2822);
-        textSecondary = const Color(0xFF9A927E);
-        accent        = const Color(0xFF7A9E78);
-        accentD       = const Color(0xFF567A54);
-        accentL       = const Color(0xFFA8C4A6);
-        secondary     = const Color(0xFFB87858);
+        if (isDark) {
+          bg            = const Color(0xFF1C1C18);
+          bg2           = const Color(0xFF262620);
+          pixelGrid     = const Color(0xFF33332B);
+          card          = const Color(0xFF22221D);
+          navBg         = const Color(0xFF1E1E1A);
+          track         = const Color(0xFF44443A);
+          textPrimary   = const Color(0xFFE2E2D8);
+          textSecondary = const Color(0xFF9A9A88);
+          accent        = const Color(0xFF8AA888);
+          accentD       = const Color(0xFF668866);
+          accentL       = const Color(0xFFACC4AC);
+          secondary     = const Color(0xFFB88868);
+        } else {
+          bg            = const Color(0xFFF2EFE2);
+          bg2           = const Color(0xFFE8E4D4);
+          pixelGrid     = const Color(0xFFDEDACA);
+          card          = const Color(0xFFECE8DA);
+          navBg         = const Color(0xFFEAE6D8);
+          track         = const Color(0xFFD8D4C4);
+          textPrimary   = const Color(0xFF2A2822);
+          textSecondary = const Color(0xFF9A927E);
+          accent        = const Color(0xFF7A9E78);
+          accentD       = const Color(0xFF567A54);
+          accentL       = const Color(0xFFA8C4A6);
+          secondary     = const Color(0xFFB87858);
+        }
         break;
     }
   }
