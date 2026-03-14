@@ -274,7 +274,7 @@ class StatisticsPage extends StatelessWidget {
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF6B8E5E) : const Color(0xFF9FB8A4).withOpacity(0.5),
+          color: isActive ? AppColors.accent : AppColors.accent.withOpacity(0.3),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Column(
@@ -325,13 +325,13 @@ class StatisticsPage extends StatelessWidget {
   // 辅助方法
   BoxDecoration _buildDashedBorder() {
     return BoxDecoration(
-      border: Border.all(color: const Color(0xFF9FB8A4).withOpacity(0.3), width: 1),
+      border: Border.all(color: AppColors.accent.withOpacity(0.3), width: 1),
       borderRadius: BorderRadius.circular(8),
     );
   }
 
   TextStyle _getCodeStyle() {
-    return const TextStyle(fontSize: 14, color: Color(0xFF718096), fontFamily: 'monospace');
+    return TextStyle(fontSize: 14, color: AppColors.textSecondary, fontFamily: 'monospace');
   }
 
   Widget _buildPeriodSelector() {

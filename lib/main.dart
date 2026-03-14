@@ -878,6 +878,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 监听 PomodoroState，确保在主题(AppColors)变更时 Scaffold 和 NavBar 也会重绘
+    context.watch<PomodoroState>();
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
@@ -1101,15 +1104,19 @@ class TomatoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tomato',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: AppColors.bg,
-        fontFamily: 'SF Pro Text',
-        useMaterial3: true,
-      ),
-      home: const HomeScreen(),
+    return Consumer<PomodoroState>(
+      builder: (context, state, child) {
+        return MaterialApp(
+          title: 'Tomato',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            scaffoldBackgroundColor: AppColors.bg,
+            fontFamily: 'SF Pro Text',
+            useMaterial3: true,
+          ),
+          home: const HomeScreen(),
+        );
+      },
     );
   }
 }

@@ -115,13 +115,16 @@ class SettingsPage extends StatelessWidget {
             children: [
               _buildCounterButton('-', () => onChanged(value - 1)),
               Container(
+                width: 50, // 增加固定宽度以确保水平对齐
                 margin: const EdgeInsets.symmetric(horizontal: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.bg,
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: Text('$value', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                child: Center(
+                  child: Text('$value', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                ),
               ),
               _buildCounterButton('+', () => onChanged(value + 1)),
             ],
